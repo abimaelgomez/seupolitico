@@ -29,11 +29,16 @@ jobs:
         continue-on-error: true
         run: node scripts/gastos.mjs
       - name: Salvar dados no repositório
+        continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add dados
-          git diff --cached --quiet || (git commit -m "dados: atualização automática $(date -u +%F)" && git push)
+          git diff --cached --quiet && exit 0
+          git commit -m "dados: atualização automática $(date -u +%F)"
+          # Se alguém enviou código durante a execução, junta antes de enviar (os dados novos prevalecem).
+          git pull --rebase -X theirs origin main
+          git push
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
