@@ -163,9 +163,57 @@ td{padding:6px;border-bottom:1px dotted var(--soft);vertical-align:top}
 .vis button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
 
 footer{margin-top:40px;border-top:3px double var(--rule);padding:16px 0 26px;font-size:.75em;color:var(--mut);text-align:center}
+
+/* ===== Abertura: jornal sendo impresso ===== */
+#abertura{position:fixed;inset:0;z-index:100;background:var(--paper);display:grid;place-items:center;cursor:pointer;
+  background-image:radial-gradient(rgba(20,18,16,.05) 1px,transparent 1px);background-size:4px 4px}
+#abertura .caixa{width:min(760px,90vw);text-align:center}
+#abertura .fio{height:3px;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);transform:scaleX(0);animation:fio .55s cubic-bezier(.7,0,.2,1) forwards}
+#abertura .fio.b{animation-delay:.9s}
+#abertura .topo{display:flex;justify-content:space-between;font-size:clamp(9px,1.6vw,12px);letter-spacing:.14em;text-transform:uppercase;color:var(--mut);padding:8px 2px;opacity:0;animation:surge .4s .35s forwards}
+#abertura h1{font-family:UnifrakturMaguntia,serif;font-weight:400;font-size:clamp(52px,12vw,124px);line-height:1;margin:12px 0 10px;white-space:nowrap}
+#abertura h1 span{display:inline-block;opacity:0;transform:translateY(-.35em) scale(1.35);filter:blur(3px);animation:carimbo .32s cubic-bezier(.2,1.6,.4,1) forwards}
+#abertura .lema{font-style:italic;color:var(--acc);font-size:clamp(13px,2.2vw,17px);padding-top:10px;opacity:0;animation:surge .5s 1.15s forwards}
+#abertura .pular{position:absolute;bottom:18px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);opacity:0;animation:surge .4s .8s forwards}
+#abertura.sai{animation:vira .7s cubic-bezier(.7,0,.3,1) forwards;transform-origin:top center}
+@keyframes fio{to{transform:scaleX(1)}}
+@keyframes surge{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes carimbo{60%{opacity:1;filter:blur(0)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes vira{0%{transform:none;opacity:1}100%{transform:translateY(-100%) rotateX(12deg);opacity:.9;box-shadow:0 30px 60px rgba(0,0,0,.25)}}
+@media (prefers-reduced-motion:reduce){
+  #abertura *,#abertura{animation-duration:.01s!important;animation-delay:0s!important}
+}
 </style>
 </head>
 <body>
+<div id="abertura" hidden aria-hidden="true">
+  <div class="caixa">
+    <div class="fio"></div>
+    <div class="topo"><span id="ab-data"></span><span>Edição de hoje</span></div>
+    <h1 id="ab-titulo">Seu Político</h1>
+    <div class="fio b"></div>
+    <div class="lema">“Os fatos são públicos. A interpretação é sua.”</div>
+  </div>
+  <div class="pular">toque para pular</div>
+</div>
+<script>
+// Abertura só na primeira visita da sessão; toque/clique pula.
+(()=>{
+  const ab=document.getElementById('abertura');
+  let visto=false;try{visto=sessionStorage.getItem('abertura')==='1';sessionStorage.setItem('abertura','1')}catch{}
+  if(visto){ab.remove();return}
+  ab.hidden=false;
+  document.getElementById('ab-data').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const h=document.getElementById('ab-titulo');
+  h.innerHTML=[...h.textContent].map((c,i)=>c===' '?' ':`<span style="animation-delay:${.35+i*.055}s">${c}</span>`).join('');
+  const reduz=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let fim=false;
+  const sair=()=>{if(fim)return;fim=true;ab.classList.add('sai');setTimeout(()=>ab.remove(),reduz?0:700)};
+  ab.addEventListener('click',sair);
+  addEventListener('keydown',sair,{once:true});
+  setTimeout(sair,reduz?300:2100);
+})();
+</script>
 <header>
   <div class="wrap topbar"><span id="hoje"></span><span>Dados oficiais · sem opinião</span></div>
   <div class="wrap mast"><a href="#/">Seu Político</a><div class="lema">“Os fatos são públicos. A interpretação é sua.”</div></div>
