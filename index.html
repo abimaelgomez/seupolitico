@@ -164,22 +164,19 @@ td{padding:6px;border-bottom:1px dotted var(--soft);vertical-align:top}
 
 footer{margin-top:40px;border-top:3px double var(--rule);padding:16px 0 26px;font-size:.75em;color:var(--mut);text-align:center}
 
-/* ===== Abertura: jornal sendo impresso ===== */
-#abertura{position:fixed;inset:0;z-index:100;background:var(--paper);display:grid;place-items:center;cursor:pointer;
-  background-image:radial-gradient(rgba(20,18,16,.05) 1px,transparent 1px);background-size:4px 4px}
-#abertura .caixa{width:min(760px,90vw);text-align:center}
-#abertura .fio{height:3px;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);transform:scaleX(0);animation:fio .55s cubic-bezier(.7,0,.2,1) forwards}
-#abertura .fio.b{animation-delay:.9s}
-#abertura .topo{display:flex;justify-content:space-between;font-size:clamp(9px,1.6vw,12px);letter-spacing:.14em;text-transform:uppercase;color:var(--mut);padding:8px 2px;opacity:0;animation:surge .4s .35s forwards}
-#abertura h1{font-family:UnifrakturMaguntia,serif;font-weight:400;font-size:clamp(52px,12vw,124px);line-height:1;margin:12px 0 10px;white-space:nowrap}
-#abertura h1 span{display:inline-block;opacity:0;transform:translateY(-.35em) scale(1.35);filter:blur(3px);animation:carimbo .32s cubic-bezier(.2,1.6,.4,1) forwards}
-#abertura .lema{font-style:italic;color:var(--acc);font-size:clamp(13px,2.2vw,17px);padding-top:10px;opacity:0;animation:surge .5s 1.15s forwards}
-#abertura .pular{position:absolute;bottom:18px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);opacity:0;animation:surge .4s .8s forwards}
-#abertura.sai{animation:vira .7s cubic-bezier(.7,0,.3,1) forwards;transform-origin:top center}
-@keyframes fio{to{transform:scaleX(1)}}
+/* ===== Abertura: placar da Câmara ===== */
+#abertura{position:fixed;inset:0;z-index:100;background:#141210;color:#f6f2e9;display:grid;place-items:center;cursor:pointer;clip-path:inset(0 0 0 0)}
+#abertura .painel{width:min(520px,86vw);text-align:center}
+#abertura .linha{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #3a352e;padding:10px 2px;font-size:clamp(11px,2.4vw,13px);letter-spacing:.14em;text-transform:uppercase;opacity:0;animation:surge .35s forwards}
+#abertura .linha b{font:900 clamp(28px,7vw,40px) "Playfair Display",serif;letter-spacing:0;color:#f6e9b0;font-variant-numeric:tabular-nums}
+#abertura .linha:nth-child(1){animation-delay:.1s}#abertura .linha:nth-child(2){animation-delay:.35s}#abertura .linha:nth-child(3){animation-delay:.6s}
+#abertura h1{font-family:UnifrakturMaguntia,serif;font-weight:400;font-size:clamp(52px,12vw,110px);line-height:1;margin:22px 0 8px;white-space:nowrap;opacity:0;transform:scale(1.6);animation:bate .45s 1.35s cubic-bezier(.2,1.4,.4,1) forwards}
+#abertura .lema{font-style:italic;color:#e0a39e;font-size:clamp(13px,2.2vw,16px);opacity:0;animation:surge .4s 1.7s forwards}
+#abertura .pular{position:absolute;bottom:18px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8d857a;opacity:0;animation:surge .4s .8s forwards}
+#abertura.sai{animation:cortina .7s cubic-bezier(.7,0,.3,1) forwards}
 @keyframes surge{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-@keyframes carimbo{60%{opacity:1;filter:blur(0)}to{opacity:1;transform:none;filter:blur(0)}}
-@keyframes vira{0%{transform:none;opacity:1}100%{transform:translateY(-100%) rotateX(12deg);opacity:.9;box-shadow:0 30px 60px rgba(0,0,0,.25)}}
+@keyframes bate{to{opacity:1;transform:none}}
+@keyframes cortina{to{clip-path:inset(0 0 100% 0)}}
 @media (prefers-reduced-motion:reduce){
   #abertura *,#abertura{animation-duration:.01s!important;animation-delay:0s!important}
 }
@@ -187,31 +184,35 @@ footer{margin-top:40px;border-top:3px double var(--rule);padding:16px 0 26px;fon
 </head>
 <body>
 <div id="abertura" hidden aria-hidden="true">
-  <div class="caixa">
-    <div class="fio"></div>
-    <div class="topo"><span id="ab-data"></span><span>Edição de hoje</span></div>
-    <h1 id="ab-titulo">Seu Político</h1>
-    <div class="fio b"></div>
+  <div class="painel">
+    <div class="linha"><span>Deputados federais</span><b data-n="513">0</b></div>
+    <div class="linha"><span>Senadores</span><b data-n="81">0</b></div>
+    <div class="linha"><span>Estados + DF</span><b data-n="27">0</b></div>
+    <h1>Seu Político</h1>
     <div class="lema">“Os fatos são públicos. A interpretação é sua.”</div>
   </div>
   <div class="pular">toque para pular</div>
 </div>
 <script>
-// Abertura só na primeira visita da sessão; toque/clique pula.
+// Abertura só na primeira visita da sessão; toque/clique/tecla pula.
 (()=>{
   const ab=document.getElementById('abertura');
   let visto=false;try{visto=sessionStorage.getItem('abertura')==='1';sessionStorage.setItem('abertura','1')}catch{}
   if(visto){ab.remove();return}
   ab.hidden=false;
-  document.getElementById('ab-data').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const h=document.getElementById('ab-titulo');
-  h.innerHTML=[...h.textContent].map((c,i)=>c===' '?' ':`<span style="animation-delay:${.35+i*.055}s">${c}</span>`).join('');
   const reduz=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // números sobem contando, como painel de votação
+  ab.querySelectorAll('[data-n]').forEach((b,i)=>{
+    const alvo=+b.dataset.n;if(reduz){b.textContent=alvo;return}
+    const t0=performance.now()+100+i*250;
+    const f=t=>{const k=Math.min(1,Math.max(0,(t-t0)/700));b.textContent=Math.round(alvo*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)};
+    requestAnimationFrame(f);
+  });
   let fim=false;
   const sair=()=>{if(fim)return;fim=true;ab.classList.add('sai');setTimeout(()=>ab.remove(),reduz?0:700)};
   ab.addEventListener('click',sair);
   addEventListener('keydown',sair,{once:true});
-  setTimeout(sair,reduz?300:2100);
+  setTimeout(sair,reduz?300:2400);
 })();
 </script>
 <header>
