@@ -41,6 +41,22 @@ async function mes(deps, ano, m) {
   return out;
 }
 
+// Senado: a CEAPS (cota dos senadores) vem num único arquivo por ano, sem CORS — por isso é salva aqui.
+async function senado(ano) {
+  const r = await get(`https://adm.senado.gov.br/adm-dadosabertos/api/v1/senadores/despesas_ceaps/${ano}`);
+  const notas = r.map(d => ({
+    id: d.codSenador, t: (d.tipoDespesa || '').trim(), v: d.valorReembolsado,
+    m: d.mes, dt: (d.data || '').slice(0, 10), f: d.fornecedor,
+  }));
+  if (!notas.length) throw new Error(`CEAPS ${ano} vazia`);
+  await writeFile(`dados/senado-gastos-${ano}.json`, JSON.stringify({ geradoEm: new Date().toISOString(), notas }));
+  console.log(`senado-gastos-${ano}: ${notas.length} notas`);
+}
+await mkdir('dados', { recursive: true });
+for (const ano of [new Date().getFullYear(), new Date().getFullYear() - 1]) {
+  try { await senado(ano); } catch (e) { console.error('Senado', ano, e.message); }
+}
+
 const deps = (await get(`${API}/deputados?itens=1000`)).dados;
 await mkdir('dados', { recursive: true });
 const hoje = new Date();

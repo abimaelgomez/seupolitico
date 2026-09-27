@@ -6,6 +6,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Seu Político</title>
 <meta name="description" content="Quem é o seu deputado, quanto gastou, como votou e quais leis foram aprovadas — com dados oficiais da Câmara. Não é um site oficial.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Seu Político">
+<meta property="og:title" content="Seu Político — quem é, quanto gastou e como votou">
+<meta property="og:description" content="Deputados e senadores: gastos, votos e leis aprovadas, com dados oficiais da Câmara e do Senado. Sem opinião, sem ranking.">
+<meta property="og:url" content="https://abimaelgomez.github.io/seupolitico/">
+<meta property="og:image" content="https://abimaelgomez.github.io/seupolitico/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f6f2e9">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -167,7 +177,8 @@ footer{margin-top:40px;border-top:3px double var(--rule);padding:16px 0 26px;fon
 
 <footer class="wrap">
   <b>Seu Político</b> — Fontes: Câmara dos Deputados (Dados Abertos) e Agência Câmara de Notícias.<br>
-  Nenhum dado é alterado. Cada informação acompanha o link da origem. O site não dá nota nem classifica políticos.
+  Nenhum dado é alterado. Cada informação acompanha o link da origem. O site não dá nota nem classifica políticos.<br>
+  <a href="#/sobre"><u>Sobre e metodologia</u></a> · <a href="https://github.com/abimaelgomez/seupolitico/issues/new" target="_blank" rel="noopener"><u>Encontrou um erro?</u></a>
 </footer>
 
 <script>
@@ -197,7 +208,7 @@ const sigla=(s,n,a)=>`<abbr title="${esc(SIGLAS[s]||s)}">${esc(s)} ${esc(n)}/${e
 const nomeTipo=s=>SIGLAS[s]||s;
 
 /* ===== Menu ===== */
-const MENU=[['','Início'],['deputados','Deputados'],['gastos','Gastos'],['votacoes','Votações'],['leis','Leis'],['noticias','Notícias']];
+const MENU=[['','Início'],['deputados','Deputados'],['senadores','Senadores'],['gastos','Gastos'],['votacoes','Votações'],['leis','Leis'],['noticias','Notícias'],['sobre','Sobre']];
 $('#menu').innerHTML=MENU.map(([h,t])=>`<li><a href="#/${h}" data-r="${h}">${t}</a></li>`).join('');
 
 /* ===== Acesso às fontes (cache em memória + novas tentativas) ===== */
@@ -245,6 +256,58 @@ const barras=(pares,fmt=brl)=>{
 };
 const soma=(ds,f)=>Object.entries(ds.reduce((a,d)=>{const k=f(d);a[k]=(a[k]||0)+d.v;return a},{})).sort((a,b)=>b[1]-a[1]);
 const deputados=()=>get('/deputados?itens=1000').then(r=>r.json.dados);
+
+/* ===== Senado Federal ===== */
+const SEN='https://legis.senado.leg.br/dadosabertos';
+const fotoSen=id=>`https://legis.senado.leg.br/senadores/fotos-oficiais/${id}`;
+const senadores=()=>get(SEN+'/senador/lista/atual.json').then(r=>r.json.ListaParlamentarEmExercicio.Parlamentares.Parlamentar.map(x=>{
+  const i=x.IdentificacaoParlamentar;
+  return {id:i.CodigoParlamentar,nome:i.NomeParlamentar,completo:i.NomeCompletoParlamentar,p:i.SiglaPartidoParlamentar,uf:i.UfParlamentar,pagina:i.UrlPaginaParlamentar,
+    participacao:x.Mandato?.DescricaoParticipacao,inicio:x.Mandato?.PrimeiraLegislaturaDoMandato?.DataInicio,fim:x.Mandato?.SegundaLegislaturaDoMandato?.DataFim};
+}).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR')));
+// Gastos dos senadores (CEAPS): gerado todo dia pelo robô (a fonte não permite acesso direto do navegador).
+const gastosSenado=ano=>{
+  const k='sen-'+ano;
+  if(!cache.has(k)) cache.set(k,fetch(`dados/senado-gastos-${ano}.json`,{cache:'no-cache'}).then(r=>{
+    if(!r.ok) throw new Error('arquivo de gastos do Senado ainda não gerado');
+    return r.json().then(j=>j.notas);
+  }));
+  return cache.get(k);
+};
+// Votações nominais do Senado: cada uma já traz os 81 votos.
+const votacoesSenado=(dias=120,cod='')=>{
+  const ini=new Date(hoje);ini.setDate(ini.getDate()-dias);
+  return get(`${SEN}/votacao?dataInicio=${iso(ini)}&dataFim=${iso(hoje)}${cod?'&codigoParlamentar='+cod:''}`)
+    .then(r=>[...r.json].sort((a,b)=>(b.dataSessao+String(b.sequencialVotacao).padStart(8,'0')).localeCompare(a.dataSessao+String(a.sequencialVotacao).padStart(8,'0'))));
+};
+const VOTO_SEN={'Sim':'Sim','Não':'Não','Abstenção':'Abstenção','Votou':'Votou (votação secreta)','P-NRV':'Presente, não registrou voto','LS':'Licença saúde','LP':'Licença particular','LAP':'Licença (atividade parlamentar)','MIS':'Em missão oficial','NCom':'Não compareceu','Presidente (art. 51 RISF)':'Presidindo a sessão'};
+const votoSen=c=>VOTO_SEN[c]||`Código do Senado: ${c}`;
+function cartaoSenado(v,uf=''){
+  const vs=v.votos||[];
+  const c=placarDe(vs.map(x=>({tipoVoto:x.siglaVotoParlamentar})));
+  const secreta=v.votacaoSecreta==='S';
+  const res=v.resultadoVotacao==='A'?'<span class="selo sim">APROVADO</span>':v.resultadoVotacao==='R'?'<span class="selo nao">REJEITADO</span>':'';
+  const grupos={};vs.forEach(x=>(grupos[x.siglaPartidoParlamentar]??=[]).push({tipoVoto:x.siglaVotoParlamentar}));
+  const doEstado=uf?vs.filter(x=>x.siglaUFParlamentar===uf):[];
+  return `<article class="votacao">
+    <div class="meta">${data(v.dataSessao)} · Plenário do Senado ${res}</div>
+    <h3>${esc(v.identificacao||'')}: ${esc(corta(v.ementa||'',220))}</h3>
+    <p style="margin:0;font-size:.86em;color:var(--mut)">${esc(corta(v.descricaoVotacao||'',260))}</p>
+    ${secreta?'<p class="vazio">Votação secreta: o Senado registra quem votou, mas não como cada um votou.</p>':`${placarHTML(c)}
+    <div class="legenda"><span><b style="color:var(--ok)">${c.sim}</b> Sim</span><span><b style="color:var(--acc)">${c.nao}</b> Não</span><span><b style="color:var(--warn)">${c.abs}</b> Abstenção</span><span><b>${c.outro}</b> ausentes, licenças e outros</span></div>
+    <details style="margin-top:10px"><summary class="tag" style="cursor:pointer">Como cada partido votou</summary><div class="partidos">${Object.entries(grupos).sort((a,b)=>b[1].length-a[1].length).map(([p,l])=>{const k=placarDe(l);return `<div class="pt"><div class="pt-l"><b>${esc(p)}</b><span>${k.sim} sim · ${k.nao} não</span></div>${placarHTML(k)}</div>`}).join('')}</div></details>`}
+    ${uf?`<details open style="margin-top:8px"><summary class="tag" style="cursor:pointer">Senadores de ${uf}</summary>${doEstado.map(x=>`<div class="linha"><span class="selo ${tipoVoto(x.siglaVotoParlamentar)==='abs'?'neutro':tipoVoto(x.siglaVotoParlamentar)}">${esc(votoSen(x.siglaVotoParlamentar).toUpperCase())}</span><a class="link" href="#/senador/${x.codigoParlamentar}">${esc(x.nomeParlamentar)}</a> <small>(${esc(x.siglaPartidoParlamentar)})</small></div>`).join('')}</details>`:''}
+    ${fonte(`${SEN}/votacao?dataInicio=${v.dataSessao}&dataFim=${v.dataSessao}`,'Senado Federal — Dados Abertos')}
+  </article>`;
+}
+
+/* ===== Compartilhar (WhatsApp / menu nativo do celular) ===== */
+function compartilhar(texto){
+  const url=location.href;
+  if(navigator.share){navigator.share({title:'Seu Político',text:texto,url}).catch(()=>{});return}
+  window.open('https://wa.me/?text='+encodeURIComponent(texto+'\n'+url),'_blank','noopener');
+}
+const botaoCompartilhar=texto=>`<button class="btn" type="button" onclick="compartilhar(${esc(JSON.stringify(texto))})">Compartilhar ↗</button>`;
 
 /* ===== Gastos de todos os deputados em um mês (513 consultas) ===== */
 const varreduras={};
@@ -351,6 +414,7 @@ async ''(){
     <form id="hbusca"><input id="hnome" placeholder="Digite o nome de um deputado" aria-label="Nome do deputado"><button class="primario">Buscar</button></form>
     <div class="meta" style="margin-bottom:6px">ou escolha seu estado</div>
     <div class="ufs">${UFS.map(u=>`<a href="#/deputados/${u}">${u}</a>`).join('')}</div>
+    <p class="meta" style="margin:12px 0 0">Procura um senador? <a class="tag" href="#/senadores">Ver os 81 senadores →</a></p>
   </section>
 
   <section class="bloco">
@@ -442,7 +506,7 @@ async deputado(id){
         <div><div class="meta">Deputado federal</div>
         <h1 class="titulo-sec">${esc(s.nome)}</h1>
         <p style="margin:6px 0">Partido: <b>${esc(s.siglaPartido)}</b> · Estado: <b>${esc(s.siglaUf)}</b> · Em exercício</p>
-        <a class="btn" href="https://www.camara.leg.br/deputados/${id}" ${ext}>Página oficial na Câmara →</a>
+        <a class="btn" href="https://www.camara.leg.br/deputados/${id}" ${ext}>Página oficial na Câmara →</a> ${botaoCompartilhar(`Veja quanto ${s.nome} (${s.siglaPartido}-${s.siglaUf}) gastou e como votou na Câmara`)}
         ${fonte(url)}</div></div>
 
       <section class="bloco" style="margin-top:22px">
@@ -480,12 +544,14 @@ async deputado(id){
 },
 
 /* ---------- GASTOS ---------- */
-async gastos(){
+async gastos(arg=''){
+  const sen=arg==='senado',P=sen?'senador':'deputado',PL=sen?'senadores':'deputados',PT=sen?'Senadores':'Deputados';
   const opts=[];
   for(let i=0;i<12;i++){const d=new Date(hoje.getFullYear(),hoje.getMonth()-i,1);opts.push([`${d.getFullYear()}-${d.getMonth()+1}`,`${MESES[d.getMonth()]} de ${d.getFullYear()}`+(i===0?' (em andamento)':'')])}
-  app.innerHTML=`<h1 class="titulo-sec">Gastos dos Deputados</h1>
-    <p class="sub">Quanto os deputados gastaram da cota parlamentar — por partido, por estado ou por deputado.</p>
-    <div class="alerta">A Câmara publica cada nota só depois do reembolso, o que pode levar semanas. <b>O mês atual sempre aparece incompleto.</b></div>
+  app.innerHTML=`<h1 class="titulo-sec">Gastos dos ${PT}</h1>
+    <nav class="subtabs"><a href="#/gastos" ${!sen?'aria-current="page"':''}>Câmara (deputados)</a><a href="#/gastos/senado" ${sen?'aria-current="page"':''}>Senado (senadores)</a></nav>
+    <p class="sub">Quanto os ${PL} gastaram da cota parlamentar — por partido, por estado ou por ${P}.</p>
+    <div class="alerta">${sen?'O Senado':'A Câmara'} publica cada nota só depois do reembolso, o que pode levar semanas. <b>O mês atual sempre aparece incompleto.</b></div>
     <form id="per"><select id="periodo" aria-label="Mês">${opts.map(([v,t],i)=>`<option value="${v}" ${i==1?'selected':''}>${t}</option>`).join('')}</select>
     <select id="gcat" aria-label="Categoria"><option value="">Todas as categorias</option></select></form>
     <div id="gprog" class="prog"></div><div id="gres"></div>`;
@@ -499,33 +565,33 @@ async gastos(){
     if(vis==='partido'){
       const tam={};deps.forEach(d=>tam[d.siglaPartido]=(tam[d.siglaPartido]||0)+1);
       tabelaDados=soma(ds,d=>d.p).map(([k,v])=>({k,n:tam[k]||0,v,m:v/(tam[k]||1)}));
-      cols=[['k','Partido'],['n','Deputados','num'],['v','Total','num'],['m','Média por deputado','num']];
+      cols=[['k','Partido'],['n',PT,'num'],['v','Total','num'],['m','Média por '+P,'num']];
     }else if(vis==='estado'){
       const tam={};deps.forEach(d=>tam[d.siglaUf]=(tam[d.siglaUf]||0)+1);
       tabelaDados=soma(ds,d=>d.uf).map(([k,v])=>({k,n:tam[k]||0,v,m:v/(tam[k]||1)}));
-      cols=[['k','Estado'],['n','Deputados','num'],['v','Total','num'],['m','Média por deputado','num']];
+      cols=[['k','Estado'],['n',PT,'num'],['v','Total','num'],['m','Média por '+P,'num']];
     }else{
       const g={};ds.forEach(d=>{(g[d.id]??={id:d.id,k:d.nome,p:d.p,uf:d.uf,n:0,v:0});g[d.id].n++;g[d.id].v+=d.v});
       tabelaDados=Object.values(g);
-      cols=[['k','Deputado'],['p','Partido'],['uf','UF'],['n','Notas','num'],['v','Total','num']];
+      cols=[['k',titulo(P)],['p','Partido'],['uf','UF'],['n','Notas','num'],['v','Total','num']];
     }
     let ord={k:'k',d:1};
     const recentes=[...ds].sort((a,b)=>b.dt.localeCompare(a.dt)).slice(0,10);
     $('#gres').innerHTML=`
       <div class="kpis"><div><div class="cifra">${brl0(total)}</div><small>total gasto${cat?' com '+esc(titulo(cat).toLowerCase()):''}</small></div>
         <div><div class="cifra">${num(ds.length)}</div><small>notas fiscais</small></div>
-        <div><div class="cifra">${comGasto}</div><small>de ${deps.length} deputados com notas publicadas</small></div>
-        <div><div class="cifra">${comGasto?brl0(total/comGasto):'—'}</div><small>média por deputado com notas</small></div></div>
+        <div><div class="cifra">${comGasto}</div><small>de ${deps.length} ${PL} com notas publicadas</small></div>
+        <div><div class="cifra">${comGasto?brl0(total/comGasto):'—'}</div><small>média por ${P} com notas</small></div></div>
       <div class="grid2 bloco" style="margin-top:26px">
         <div><h3 class="rx-t">Com o quê</h3>${barras(soma(ds,d=>titulo(d.t)).slice(0,10))}</div>
-        <div><h3 class="rx-t">Notas mais recentes</h3>${recentes.map(d=>`<div class="linha"><span class="selo">${data(d.dt)}</span><div><a class="link" href="#/deputado/${d.id}"><b>${esc(d.nome)}</b></a> (${esc(d.p)}-${esc(d.uf)}) · <b>${brl(d.v)}</b><br><small>${esc(titulo(d.t))} — ${esc(d.f)}</small></div></div>`).join('')||'<p class="vazio">Nenhuma nota.</p>'}</div>
+        <div><h3 class="rx-t">Notas mais recentes</h3>${recentes.map(d=>`<div class="linha"><span class="selo">${data(d.dt)}</span><div><a class="link" href="#/${P}/${d.id}"><b>${esc(d.nome)}</b></a> (${esc(d.p)}-${esc(d.uf)}) · <b>${brl(d.v)}</b><br><small>${esc(titulo(d.t))} — ${esc(d.f)}</small></div></div>`).join('')||'<p class="vazio">Nenhuma nota.</p>'}</div>
       </div>
       <section class="bloco">
-        <div class="vis" role="group" aria-label="Ver por">${[['partido','Por partido'],['estado','Por estado'],['deputado','Por deputado']].map(([k,t])=>`<button data-v="${k}" aria-pressed="${vis===k}">${t}</button>`).join('')}</div>
+        <div class="vis" role="group" aria-label="Ver por">${[['partido','Por partido'],['estado','Por estado'],['deputado','Por '+P]].map(([k,t])=>`<button data-v="${k}" aria-pressed="${vis===k}">${t}</button>`).join('')}</div>
         ${vis==='deputado'?'<input id="gfiltro" placeholder="Filtrar por nome, partido ou UF" style="width:100%;margin-bottom:8px">':''}
-        ${vis!=='deputado'?ajuda('Por que “média por deputado”?','Partidos e estados têm tamanhos muito diferentes. Dividir o total pelo número de deputados em exercício permite comparar de forma justa.'):''}
+        ${vis!=='deputado'?ajuda(`Por que “média por ${P}”?`,`Partidos e estados têm tamanhos muito diferentes. Dividir o total pelo número de ${PL} em exercício permite comparar de forma justa.`):''}
         <div class="tab-wrap"><table id="gtab"><thead><tr>${cols.map(([k,t,c])=>`<th data-k="${k}" class="${c||''}">${t} ↕</th>`).join('')}</tr></thead><tbody></tbody></table></div>
-        <p class="fonte">Fonte: Câmara dos Deputados — Dados Abertos (/deputados/{id}/despesas) · ${agora()} · valores reembolsados. Ordem alfabética; clique no título da coluna para reordenar.</p>
+        <p class="fonte">Fonte: ${sen?'Senado Federal — Dados Abertos (CEAPS)':'Câmara dos Deputados — Dados Abertos (/deputados/{id}/despesas)'} · ${agora()} · valores reembolsados. Ordem alfabética; clique no título da coluna para reordenar.</p>
       </section>`;
     const linhas=()=>{
       const f=($('#gfiltro')?.value||'').toLowerCase();
@@ -533,7 +599,7 @@ async gastos(){
         .sort((a,b)=>{const A=a[ord.k],B=b[ord.k];return (typeof A==='number'?A-B:String(A).localeCompare(B,'pt-BR'))*ord.d});
       $('#gtab tbody').innerHTML=rows.map(x=>`<tr>${cols.map(([k,,c])=>{
         let v=x[k];if(k==='v'||k==='m') v=brl(v);
-        if(k==='k'&&vis==='deputado') v=`<a class="link" href="#/deputado/${x.id}"><b>${esc(x.k)}</b></a>`;
+        if(k==='k'&&vis==='deputado') v=`<a class="link" href="#/${P}/${x.id}"><b>${esc(x.k)}</b></a>`;
         else if(k==='k') v=`<b>${esc(v)}</b>`; else v=esc(v);
         return `<td class="${c||''}">${v}</td>`}).join('')}</tr>`).join('')||`<tr><td colspan="${cols.length}" class="vazio">Nada encontrado.</td></tr>`;
     };
@@ -545,8 +611,17 @@ async gastos(){
   const consultar=async()=>{
     const [a,m]=$('#periodo').value.split('-').map(Number);
     $('#gres').innerHTML='';
-    deps=await deputados();
-    base=await gastosDoMes(a,m,barraProg($('#gprog'),`Somando as notas dos ${deps.length} deputados (cerca de 1 minuto na primeira vez)…`));
+    try{
+      if(sen){
+        const ss=await senadores();
+        deps=ss.map(x=>({siglaPartido:x.p,siglaUf:x.uf}));
+        const por={};ss.forEach(x=>por[x.id]=x);
+        base=(await gastosSenado(a)).filter(d=>d.m===m&&por[d.id]).map(d=>({...d,nome:por[d.id].nome,p:por[d.id].p,uf:por[d.id].uf}));
+      }else{
+        deps=await deputados();
+        base=await gastosDoMes(a,m,barraProg($('#gprog'),`Somando as notas dos ${deps.length} deputados (cerca de 1 minuto na primeira vez)…`));
+      }
+    }catch(e){$('#gprog').innerHTML=erro(e);return}
     $('#gprog').innerHTML='';
     const cats=[...new Set(base.map(d=>d.t))].sort();
     $('#gcat').innerHTML='<option value="">Todas as categorias</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(titulo(c))}</option>`).join('');
@@ -559,12 +634,20 @@ async gastos(){
 
 /* ---------- VOTAÇÕES ---------- */
 async votacoes(arg=''){
-  const uf=UFS.includes(arg)?arg:'';
-  app.innerHTML=`<h1 class="titulo-sec">Votações</h1><p class="sub">O que o Plenário da Câmara votou, o resultado e como cada partido votou.</p>
-    ${ajuda('Por que só algumas votações aparecem?','Aqui estão as votações “nominais”, feitas no painel eletrônico — as únicas em que a Câmara registra o voto de cada deputado.')}
-    <form><select id="vuf" aria-label="Estado"><option value="">Ver como votaram os deputados do meu estado…</option>${UFS.map(u=>`<option ${u===uf?'selected':''}>${u}</option>`).join('')}</select></form>
+  const [a0,a1]=arg.split('/');const sen=a0==='senado';const u0=sen?a1:a0;
+  const uf=UFS.includes(u0)?u0:'';
+  app.innerHTML=`<h1 class="titulo-sec">Votações</h1>
+    <nav class="subtabs"><a href="#/votacoes${uf?'/'+uf:''}" ${!sen?'aria-current="page"':''}>Câmara</a><a href="#/votacoes/senado${uf?'/'+uf:''}" ${sen?'aria-current="page"':''}>Senado</a></nav>
+    <p class="sub">O que o Plenário ${sen?'do Senado':'da Câmara'} votou, o resultado e como cada partido votou.</p>
+    ${ajuda('Por que só algumas votações aparecem?','Aqui estão as votações “nominais”, feitas no painel eletrônico — as únicas em que o voto de cada parlamentar é registrado.')}
+    <form><select id="vuf" aria-label="Estado"><option value="">Ver como votaram os ${sen?'senadores':'deputados'} do meu estado…</option>${UFS.map(u=>`<option ${u===uf?'selected':''}>${u}</option>`).join('')}</select></form>
     <div id="vlista"><p class="vazio">Buscando votações…</p></div>`;
-  $('#vuf').onchange=()=>location.hash='#/votacoes/'+$('#vuf').value;
+  $('#vuf').onchange=()=>location.hash='#/votacoes/'+(sen?'senado/':'')+$('#vuf').value;
+  if(sen){
+    try{const vs=(await votacoesSenado(120)).slice(0,12);$('#vlista').innerHTML=vs.length?vs.map(v=>cartaoSenado(v,uf)).join(''):'<p class="vazio">Nenhuma votação nominal nos últimos 4 meses.</p>'}
+    catch(e){$('#vlista').innerHTML=erro(e)}
+    return;
+  }
   try{
     const vs=await votacoesNominais(10);
     if(!vs.length){$('#vlista').innerHTML='<p class="vazio">Nenhuma votação nominal recente.</p>';return}
@@ -574,6 +657,101 @@ async votacoes(arg=''){
       cartaoVotacao(v,{uf}).then(h=>el.innerHTML=h).catch(e=>el.innerHTML=erro(e));
     }
   }catch(e){$('#vlista').innerHTML=erro(e)}
+},
+
+/* ---------- SENADORES ---------- */
+async senadores(arg=''){
+  const uf=UFS.includes(arg)?arg:'';
+  app.innerHTML=`<h1 class="titulo-sec">Senadores${uf?' de '+uf:''}</h1><p class="sub">São 3 senadores por estado, com mandato de 8 anos. Clique para ver quanto gastou e como votou.</p>
+    <form id="sbusca"><input id="snome" placeholder="Nome do senador" aria-label="Nome">
+    <select id="suf" aria-label="Estado"><option value="">Todos os estados</option>${UFS.map(u=>`<option ${u===uf?'selected':''}>${u}</option>`).join('')}</select></form><div id="sres"><p class="vazio">Consultando…</p></div>`;
+  try{
+    const ss=await senadores();
+    const mostrar=()=>{
+      const f=$('#snome').value.toLowerCase(),u=$('#suf').value;
+      const l=ss.filter(x=>(!u||x.uf===u)&&(!f||(x.nome+' '+x.completo).toLowerCase().includes(f)));
+      $('#sres').innerHTML=`<p class="meta">${l.length} senador(es)</p><div class="lista">${l.map(x=>`<a class="dep" href="#/senador/${x.id}"><img src="${fotoSen(x.id)}" alt="" loading="lazy"><b>${esc(x.nome)}</b><small>${esc(x.p)} · ${esc(x.uf)}</small></a>`).join('')}</div>${fonte(SEN+'/senador/lista/atual.json','Senado Federal — Dados Abertos')}`;
+    };
+    $('#snome').oninput=mostrar;$('#suf').onchange=mostrar;$('#sbusca').onsubmit=e=>{e.preventDefault();mostrar()};
+    mostrar();
+  }catch(e){$('#sres').innerHTML=erro(e)}
+},
+
+async senador(id){
+  app.innerHTML='<p class="vazio">Carregando perfil…</p>';
+  try{
+    const s=(await senadores()).find(x=>x.id==id);
+    if(!s) throw new Error('senador não encontrado entre os em exercício');
+    const ano=hoje.getFullYear();
+    app.innerHTML=`<a class="voltar" href="#/senadores/${esc(s.uf)}">← Senadores de ${esc(s.uf)}</a>
+      <div class="perfil"><img src="${fotoSen(id)}" alt="Foto oficial">
+        <div><div class="meta">Senador(a) da República</div>
+        <h1 class="titulo-sec">${esc(s.nome)}</h1>
+        <p class="sub" style="margin:0 0 6px">${esc(s.completo)}</p>
+        <p style="margin:6px 0">Partido: <b>${esc(s.p)}</b> · Estado: <b>${esc(s.uf)}</b> · ${esc(s.participacao||'Em exercício')}${s.inicio?` · mandato ${new Date(s.inicio).getUTCFullYear()}–${s.fim?new Date(s.fim).getUTCFullYear():'—'}`:''}</p>
+        <a class="btn" href="${esc((s.pagina||'').replace('http:','https:'))}" ${ext}>Página oficial no Senado →</a> ${botaoCompartilhar(`Veja quanto ${s.nome} (${s.p}-${s.uf}) gastou e como votou no Senado`)}
+        ${fonte(SEN+'/senador/lista/atual.json','Senado Federal — Dados Abertos')}</div></div>
+      <section class="bloco" style="margin-top:22px"><h2 class="kicker">Resumo do mandato</h2>
+        <div class="kpis" id="kpis">${[`gastou em ${ano}`,'mandatos no Senado','votações nominais em 4 meses','presença nessas votações'].map(t=>`<div><div class="cifra sk" style="height:32px"></div><small>${t}</small></div>`).join('')}</div></section>
+      <section class="bloco"><h2 class="kicker">Quanto gastou</h2>
+        ${ajuda('De onde vem esse dinheiro?','É a CEAPS, a cota dos senadores para despesas do mandato (passagens, escritório, divulgação etc.). O senador paga e pede reembolso; o Senado publica cada nota.')}
+        <div class="grid2"><div><h3 class="rx-t">Por mês em ${ano}</h3><div id="sx-mes"><p class="vazio">Consultando…</p></div></div>
+        <div><h3 class="rx-t">Com o quê</h3><div id="sx-cat"></div></div>
+        <div><h3 class="rx-t">Para quem (maiores fornecedores)</h3><div id="sx-forn"></div></div>
+        <div><h3 class="rx-t">Mandatos</h3><div id="sx-mand"><p class="vazio">Consultando…</p></div></div></div></section>
+      <section class="bloco"><h2 class="kicker">Como votou</h2><div id="sx-votos"><p class="vazio">Buscando votações nominais…</p></div></section>`;
+    const kp=(i,v,t)=>{const el=$('#kpis')?.children[i];if(el) el.innerHTML=`<div class="cifra">${v}</div><small>${t}</small>`};
+
+    gastosSenado(ano).then(ns=>{
+      const ds=ns.filter(d=>d.id==id);
+      kp(0,brl0(ds.reduce((a,d)=>a+d.v,0)),`gastou da cota em ${ano} · ${num(ds.length)} notas`);
+      $('#sx-mes').innerHTML=barras(soma(ds,d=>MESES[d.m-1]).sort((a,b)=>MESES.indexOf(a[0])-MESES.indexOf(b[0])))+fonte('https://www12.senado.leg.br/transparencia/sen/','Senado Federal — CEAPS');
+      $('#sx-cat').innerHTML=barras(soma(ds,d=>esc(corta(d.t,60))).slice(0,8));
+      $('#sx-forn').innerHTML=barras(soma(ds,d=>esc(d.f)).slice(0,6));
+    }).catch(e=>{kp(0,'—','gastos indisponíveis');$('#sx-mes').innerHTML=erro(e)});
+
+    get(`${SEN}/senador/${id}/mandatos.json`).then(r=>{
+      let m=r.json.MandatoParlamentar?.Parlamentar?.Mandatos?.Mandato||[];m=Array.isArray(m)?m:[m];
+      const tit=m.filter(x=>x.DescricaoParticipacao==='Titular');
+      kp(1,tit.length||m.length,tit.length>1?'mandatos como titular':'mandato como titular');
+      $('#sx-mand').innerHTML=m.map(x=>`<div class="linha" style="padding:5px 0">${esc(x.DescricaoParticipacao)} · ${esc(x.UfParlamentar)} · ${x.PrimeiraLegislaturaDoMandato?.DataInicio?new Date(x.PrimeiraLegislaturaDoMandato.DataInicio).getUTCFullYear():'—'}–${x.SegundaLegislaturaDoMandato?.DataFim?new Date(x.SegundaLegislaturaDoMandato.DataFim).getUTCFullYear():'—'}</div>`).join('')||'<p class="vazio">Sem registros.</p>';
+    }).catch(e=>$('#sx-mand').innerHTML=erro(e));
+
+    try{
+      const vs=await votacoesSenado(120,id);
+      const presentes=['Sim','Não','Abstenção','Votou','Presidente (art. 51 RISF)'];
+      const meus=vs.map(v=>({v,voto:(v.votos||[]).find(x=>x.codigoParlamentar==id)?.siglaVotoParlamentar||'—'}));
+      kp(2,meus.length,'votações nominais nos últimos 4 meses');
+      kp(3,meus.length?Math.round(meus.filter(x=>presentes.includes(x.voto)).length/meus.length*100)+'%':'—','votou nessas votações (inclui presidir a sessão)');
+      $('#sx-votos').innerHTML=tabela(['Data','O que foi votado','Voto'],meus.slice(0,15).map(({v,voto})=>{const t=tipoVoto(voto);
+        return `<tr><td>${data(v.dataSessao)}</td><td><b>${esc(v.identificacao||'')}</b>: ${esc(corta(v.ementa||'',160))}<br><small style="color:var(--mut)">${v.resultadoVotacao==='A'?'Resultado: aprovado':v.resultadoVotacao==='R'?'Resultado: rejeitado':''}</small></td><td><span class="selo ${t==='abs'?'neutro':t}">${esc(votoSen(voto).toUpperCase())}</span></td></tr>`}))+
+        '<p class="fonte">“Votou (votação secreta)”: o Senado registra a presença, mas não o voto. Fonte: Senado Federal — Dados Abertos.</p>';
+    }catch(e){kp(2,'—','indisponível');kp(3,'—','indisponível');$('#sx-votos').innerHTML=erro(e)}
+  }catch(e){app.innerHTML=erro(e)}
+},
+
+/* ---------- SOBRE ---------- */
+async sobre(){
+  app.innerHTML=`<article style="max-width:760px">
+    <h1 class="titulo-sec">Sobre o Seu Político</h1>
+    <p class="sub">Um canal independente para qualquer pessoa saber quem são os parlamentares, quanto gastam, como votam e o que foi aprovado.</p>
+    <h2 class="kicker">Princípios</h2>
+    <p>O site <b>não dá nota, não faz ranking e não classifica políticos</b> como bons ou ruins. Ele mostra registros oficiais, números e fontes — a interpretação é de quem lê. Toda informação vem acompanhada do link para a origem.</p>
+    <h2 class="kicker">De onde vêm os dados</h2>
+    <ul><li><b>Câmara dos Deputados — Dados Abertos</b>: deputados, gastos da cota parlamentar, votações, proposições, comissões.</li>
+      <li><b>Senado Federal — Dados Abertos</b>: senadores, mandatos, votações e gastos da cota (CEAPS).</li>
+      <li><b>Agência Câmara de Notícias</b>: notícias por tema.</li></ul>
+    <p>A maior parte é consultada <b>em tempo real</b>. Os totais de gastos são recalculados automaticamente todo dia às 6h.</p>
+    <h2 class="kicker">Limitações</h2>
+    <ul><li>As notas de gastos só aparecem depois que o reembolso é processado — o mês atual sempre está incompleto.</li>
+      <li>Só as votações <b>nominais</b> registram o voto de cada parlamentar. Em votações secretas do Senado, sabe-se quem votou, mas não como.</li>
+      <li>“Sem registro de voto” não explica o motivo (falta, licença, missão): a fonte nem sempre informa.</li>
+      <li>Médias por partido e estado dividem o total pelo número de parlamentares em exercício hoje.</li></ul>
+    <h2 class="kicker">Aviso legal</h2>
+    <p>Projeto independente, sem vínculo com a Câmara, o Senado ou qualquer partido. <b>Não é um site oficial.</b> Os dados são reproduzidos como publicados pelas fontes oficiais. A existência de um gasto, voto ou registro não implica qualquer juízo sobre a pessoa.</p>
+    <h2 class="kicker">Encontrou um erro?</h2>
+    <p>Avise pelo GitHub: <a class="link tag" href="https://github.com/abimaelgomez/seupolitico/issues/new" ${ext}>reportar um problema →</a>. O código é aberto: <a class="link tag" href="https://github.com/abimaelgomez/seupolitico" ${ext}>github.com/abimaelgomez/seupolitico</a>.</p>
+  </article>`;
 },
 
 /* ---------- LEIS ---------- */
@@ -676,7 +854,7 @@ const ABAS={
 function rota(){
   const m=location.hash.match(/^#\/([^/]*)\/?(.*)$/)||[];
   const pag=m[1]||'',arg=m[2]||'';
-  const ativo=pag==='deputado'?'deputados':pag;
+  const ativo=pag==='deputado'?'deputados':pag==='senador'?'senadores':pag;
   document.querySelectorAll('#menu a').forEach(a=>{
     if(a.dataset.r===ativo){a.setAttribute('aria-current','page');a.scrollIntoView({block:'nearest',inline:'center'})}
     else a.removeAttribute('aria-current');
