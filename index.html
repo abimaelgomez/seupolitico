@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light only">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seu Político</title>
+<meta name="description" content="Quem é o seu deputado, quanto gastou, como votou e quais leis foram aprovadas — com dados oficiais da Câmara. Não é um site oficial.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f6f2e9;--ink:#141210;--mut:#5f584d;--rule:#141210;--soft:#d6cdbb;--acc:#8b1a1a;--ok:#2f6b2f;--warn:#8a6d1a}
+html{color-scheme:light only;scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 "Libre Baskerville",Georgia,serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+a{color:inherit;text-decoration:none}
+a:hover h2,a:hover h3,a.link:hover{text-decoration:underline}
+img{display:block;max-width:100%}
+
+/* ===== Cabeçalho ===== */
+.topbar{display:flex;justify-content:space-between;gap:8px;font-size:.7em;text-transform:uppercase;letter-spacing:.08em;padding:8px 0;border-bottom:1px solid var(--soft);color:var(--mut)}
+.mast{text-align:center;padding:14px 0 6px}
+.mast a{font-family:UnifrakturMaguntia,serif;font-size:clamp(42px,8vw,88px);line-height:1}
+.lema{font-style:italic;font-size:.82em;color:var(--mut)}
+.menu{position:sticky;top:0;z-index:10;background:var(--paper);border-top:3px double var(--rule);border-bottom:1px solid var(--rule)}
+.menu ul{list-style:none;margin:0 auto;padding:0 16px;max-width:1180px;display:flex;justify-content:center;gap:4px;overflow-x:auto;scrollbar-width:none}
+.menu ul::-webkit-scrollbar{display:none}
+@media (max-width:700px){.menu ul{justify-content:flex-start}}
+.menu a{display:block;white-space:nowrap;padding:11px 14px;font-family:"Playfair Display",serif;font-weight:700;border-bottom:3px solid transparent}
+.menu a[aria-current=page]{border-bottom-color:var(--acc);color:var(--acc)}
+.menu a:hover{color:var(--acc)}
+.aviso{font-size:.7em;text-align:center;color:var(--mut);padding:5px 0;border-bottom:1px solid var(--soft)}
+
+/* ===== Base ===== */
+main{padding:22px 0 10px;min-height:60vh}
+.titulo-sec{font-family:"Playfair Display";font-weight:900;font-size:clamp(28px,4vw,42px);margin:0 0 4px;line-height:1.1}
+.sub{color:var(--mut);font-style:italic;margin:0 0 18px;font-size:.92em}
+.kicker{font-family:"Playfair Display";font-weight:900;text-transform:uppercase;font-size:.8em;letter-spacing:.12em;border-bottom:2px solid var(--rule);padding-bottom:4px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.kicker a{font-family:"Libre Baskerville";font-weight:400;letter-spacing:0;text-transform:none;font-size:1.05em;color:var(--acc);white-space:nowrap}
+.bloco{margin-top:38px}
+.cols{display:grid;grid-template-columns:1.6fr 1fr;gap:32px}
+@media (max-width:900px){.cols{grid-template-columns:1fr}}
+.meta{font-size:.7em;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
+.tag{color:var(--acc);font-weight:700}
+.fonte{font-size:.68em;color:var(--mut);margin-top:8px;font-style:italic}
+.fonte a{text-decoration:underline}
+.vazio{color:var(--mut);font-style:italic;font-size:.9em}
+.btn{display:inline-block;margin-top:12px;padding:9px 16px;border:1px solid var(--rule);font-family:"Playfair Display";font-weight:700;cursor:pointer;background:transparent}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.alerta{border-left:4px solid var(--acc);background:rgba(139,26,26,.06);padding:10px 14px;font-size:.88em;margin:0 0 16px}
+details.ajuda{font-size:.82em;margin:6px 0 12px;color:var(--mut)}
+details.ajuda summary{cursor:pointer;color:var(--acc);font-style:italic}
+details.ajuda p{margin:6px 0 0;padding-left:12px;border-left:2px solid var(--soft)}
+.chip{display:inline-block;font-size:.7em;border:1px solid var(--soft);padding:1px 7px;margin:4px 4px 0 0;color:var(--mut);font-style:italic}
+.selo{display:inline-block;flex:none;font-family:"Playfair Display";font-weight:900;font-size:.68em;letter-spacing:.06em;border:1.5px solid currentColor;padding:1px 6px;height:fit-content;white-space:nowrap}
+.selo.sim{color:var(--ok)}.selo.nao{color:var(--acc)}.selo.neutro{color:var(--warn)}
+.cifra{font-family:"Playfair Display";font-weight:900;font-size:2.1em;line-height:1}
+.sk{background:linear-gradient(90deg,var(--soft) 0,transparent 50%,var(--soft) 100%);background-size:200% 100%;animation:sk 1.2s infinite;opacity:.6}
+@keyframes sk{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+
+/* formulários */
+form{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+input,select,button{font:inherit;padding:10px 12px;border:1px solid var(--rule);background:transparent;color:var(--ink);border-radius:0}
+select option{background:var(--paper)}
+form input{flex:1;min-width:200px}
+button{cursor:pointer;font-family:"Playfair Display";font-weight:700}
+.primario{background:var(--ink);color:var(--paper)}
+
+/* ===== Capa: busca ===== */
+.hero{border:1px solid var(--rule);padding:22px;text-align:center;background:rgba(255,255,255,.35)}
+.hero h1{font-family:"Playfair Display";font-weight:900;font-size:clamp(26px,4vw,40px);margin:0;line-height:1.1}
+.hero p{margin:6px 0 16px;color:var(--mut)}
+.hero form{justify-content:center;max-width:640px;margin:0 auto 14px}
+.ufs{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
+.ufs a{min-width:42px;padding:5px 0;border:1px solid var(--soft);font-family:"Playfair Display";font-weight:700;font-size:.85em}
+.ufs a:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* números */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--rule)}
+.kpis>div{padding:14px 12px;text-align:center}
+.kpis>div+div{border-left:1px solid var(--rule)}
+.kpis small{display:block;font-size:.72em;color:var(--mut);margin-top:5px;line-height:1.35}
+@media (max-width:760px){.kpis{grid-template-columns:1fr 1fr}.kpis>div:nth-child(3){border-left:0}.kpis>div:nth-child(n+3){border-top:1px solid var(--rule)}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px 34px}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+.rx-t{font-family:"Playfair Display";font-weight:900;font-size:1.1em;margin:0 0 8px;border-bottom:1px solid var(--soft);padding-bottom:4px}
+.barra{margin:0 0 9px}
+.barra-l{display:flex;justify-content:space-between;gap:10px;font-size:.82em}
+.barra-l span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barra-l b{white-space:nowrap}
+.barra-t{height:7px;background:var(--soft);margin-top:3px}
+.barra-t i{display:block;height:100%;background:var(--ink)}
+
+/* votação: placar e partidos */
+.votacao{border-top:2px solid var(--rule);padding:14px 0 18px}
+.votacao h3{font-family:"Playfair Display";font-weight:900;font-size:1.25em;line-height:1.25;margin:6px 0}
+.placar{display:flex;height:22px;margin:10px 0 4px;border:1px solid var(--rule)}
+.placar i{display:block;height:100%}
+.p-sim{background:var(--ok)}.p-nao{background:var(--acc)}.p-abs{background:var(--warn)}
+.legenda{font-size:.8em;display:flex;gap:14px;flex-wrap:wrap}
+.legenda b{font-family:"Playfair Display"}
+.partidos{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px 18px;margin-top:12px}
+.pt{font-size:.8em}
+.pt .placar{height:9px;margin:2px 0 0}
+.pt-l{display:flex;justify-content:space-between}
+
+/* leis */
+.lei{padding:12px 0;border-bottom:1px dotted var(--soft)}
+.lei .nome{font-family:"Playfair Display";font-weight:900;color:var(--acc)}
+.lei p{margin:4px 0 0}
+
+/* notícias */
+.ncards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+@media (max-width:900px){.ncards{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.ncards{grid-template-columns:1fr}}
+.card img{width:100%;aspect-ratio:3/2;object-fit:cover;background:var(--soft)}
+.card h3{font-family:"Playfair Display";font-weight:700;font-size:1.05em;line-height:1.25;margin:8px 0 4px}
+.card p{font-size:.84em;margin:0;color:var(--mut)}
+.card .tema{font-family:"Playfair Display";font-weight:900;font-size:.72em;text-transform:uppercase;letter-spacing:.1em;color:var(--acc);margin-top:8px}
+.lead img{width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--soft)}
+.lead h2{font-family:"Playfair Display";font-weight:900;font-size:clamp(24px,3vw,36px);line-height:1.12;margin:10px 0 6px}
+.subtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
+.subtabs a{padding:6px 12px;border:1px solid var(--soft);font-family:"Playfair Display";font-weight:700;font-size:.9em}
+.subtabs a[aria-current]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* deputados */
+.lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:18px}
+.dep{text-align:center}
+.dep img{width:100%;aspect-ratio:3/4;object-fit:cover;filter:grayscale(1) contrast(1.05);transition:filter .2s}
+.dep:hover img{filter:none}
+.dep b{display:block;font-family:"Playfair Display";margin-top:6px;line-height:1.2}
+.dep small{color:var(--mut)}
+.perfil{display:grid;grid-template-columns:180px 1fr;gap:22px;border-bottom:1px solid var(--rule);padding-bottom:18px}
+@media (max-width:560px){.perfil{grid-template-columns:1fr}.perfil img{max-width:180px}}
+.perfil img{width:180px}
+.voltar{font-size:.85em;color:var(--acc);display:inline-block;margin-bottom:12px}
+.tabs{display:flex;flex-wrap:wrap;margin:18px 0 10px;border-bottom:2px solid var(--rule)}
+.tabs button{border:0;padding:8px 14px}
+.tabs button[aria-selected=true]{background:var(--ink);color:var(--paper)}
+.tab-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.85em}
+th{font-family:"Playfair Display";text-align:left;border-bottom:1.5px solid var(--rule);padding:6px;white-space:nowrap}
+th[data-k]{cursor:pointer}
+td{padding:6px;border-bottom:1px dotted var(--soft);vertical-align:top}
+.num{text-align:right;white-space:nowrap}
+.linha{display:flex;gap:10px;padding:9px 0;border-bottom:1px dotted var(--soft);font-size:.86em}
+.prog{margin:10px 0 18px}
+.vis{display:flex;gap:0;margin:0 0 12px}
+.vis button{border-right-width:0}.vis button:last-child{border-right-width:1px}
+.vis button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+
+footer{margin-top:40px;border-top:3px double var(--rule);padding:16px 0 26px;font-size:.75em;color:var(--mut);text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap topbar"><span id="hoje"></span><span>Dados oficiais · sem opinião</span></div>
+  <div class="wrap mast"><a href="#/">Seu Político</a><div class="lema">“Os fatos são públicos. A interpretação é sua.”</div></div>
+  <nav class="menu" aria-label="Seções"><ul id="menu"></ul></nav>
+  <div class="aviso">Projeto independente · não é um site oficial · tudo consultado em tempo real na Câmara dos Deputados</div>
+</header>
+
+<main class="wrap" id="app"></main>
+
+<footer class="wrap">
+  <b>Seu Político</b> — Fontes: Câmara dos Deputados (Dados Abertos) e Agência Câmara de Notícias.<br>
+  Nenhum dado é alterado. Cada informação acompanha o link da origem. O site não dá nota nem classifica políticos.
+</footer>
+
+<script>
+const API='https://dadosabertos.camara.leg.br/api/v2';
+const RSS='https://www.camara.leg.br/noticias/rss/';
+const $=s=>document.querySelector(s);
+const app=$('#app');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const brl0=v=>brl(v).replace(/,\d\d$/,'');
+const num=v=>Number(v||0).toLocaleString('pt-BR');
+const data=d=>d?new Date(d).toLocaleDateString('pt-BR',{timeZone:'UTC'}):'—';
+const hora=d=>d?new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+const iso=d=>d.toISOString().slice(0,10);
+const agora=()=>new Date().toLocaleString('pt-BR');
+const corta=(s,n)=>s&&s.length>n?s.slice(0,n).replace(/\s\S*$/,'')+'…':(s||'');
+const titulo=s=>s?s.charAt(0)+s.slice(1).toLowerCase():'';
+const ext='target="_blank" rel="noopener"';
+const hoje=new Date();
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const UFS='AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ');
+$('#hoje').textContent=hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+/* Siglas traduzidas para quem não é do meio */
+const SIGLAS={PL:'Projeto de Lei',PLP:'Projeto de Lei Complementar',PEC:'Proposta de Emenda à Constituição',MPV:'Medida Provisória',PLV:'Projeto de Lei de Conversão',PDL:'Projeto de Decreto Legislativo',REQ:'Requerimento',RIC:'Requerimento de Informação',INC:'Indicação',PRC:'Projeto de Resolução',EMC:'Emenda',SBT:'Substitutivo'};
+const sigla=(s,n,a)=>`<abbr title="${esc(SIGLAS[s]||s)}">${esc(s)} ${esc(n)}/${esc(a)}</abbr>`;
+const nomeTipo=s=>SIGLAS[s]||s;
+
+/* ===== Menu ===== */
+const MENU=[['','Início'],['deputados','Deputados'],['gastos','Gastos'],['votacoes','Votações'],['leis','Leis'],['noticias','Notícias']];
+$('#menu').innerHTML=MENU.map(([h,t])=>`<li><a href="#/${h}" data-r="${h}">${t}</a></li>`).join('');
+
+/* ===== Acesso às fontes (cache em memória + novas tentativas) ===== */
+const cache=new Map();
+function get(path){
+  const url=path.startsWith('http')?path:API+path;
+  if(cache.has(url)) return cache.get(url);
+  // A API da Câmara às vezes falha momentaneamente; tenta de novo antes de desistir.
+  const tentar=async n=>{
+    try{
+      const r=await fetch(url,{headers:{Accept:'application/json'},cache:n?'no-store':'default'});
+      if(!r.ok) throw new Error('fonte respondeu '+r.status);
+      return {json:await r.json(),url,total:Number(r.headers.get('X-Total-Count'))||null};
+    }catch(e){if(n>=3) throw e;await new Promise(s=>setTimeout(s,400*(n+1)));return tentar(n+1)}
+  };
+  const p=tentar(0);
+  cache.set(url,p);p.catch(()=>cache.delete(url));
+  return p;
+}
+function feed(nome){
+  const url=RSS+nome;
+  if(cache.has(url)) return cache.get(url);
+  const p=fetch(url).then(async r=>{
+    if(!r.ok) throw new Error('RSS '+r.status);
+    const xml=new DOMParser().parseFromString(await r.text(),'text/xml');
+    return [...xml.querySelectorAll('item')].map(i=>{
+      const t=s=>i.querySelector(s)?.textContent?.trim()||'';
+      const html=i.getElementsByTagName('content:encoded')[0]?.textContent||t('description');
+      const doc=new DOMParser().parseFromString(html,'text/html');
+      const img=doc.querySelector('img');
+      return {titulo:t('title'),link:t('link'),data:t('pubDate'),img:img?.getAttribute('src')||'',alt:img?.getAttribute('alt')||'',
+        pars:[...doc.querySelectorAll('p')].map(p=>p.textContent.trim()).filter(x=>x.length>40)};
+    });
+  });
+  cache.set(url,p);p.catch(()=>cache.delete(url));
+  return p;
+}
+const fonte=(url,nome='Câmara dos Deputados — Dados Abertos')=>`<div class="fonte">Fonte: ${nome} · ${agora()}${url?` · <a href="${esc(url)}" ${ext}>ver origem</a>`:''}</div>`;
+const erro=e=>`<p class="vazio">Fonte indisponível no momento (${esc(e.message)}). Tente novamente em instantes.</p>`;
+const ajuda=(q,r)=>`<details class="ajuda"><summary>${q}</summary><p>${r}</p></details>`;
+const barras=(pares,fmt=brl)=>{
+  if(!pares.length) return '<p class="vazio">Sem registros.</p>';
+  const max=Math.max(...pares.map(p=>p[1]));
+  return pares.map(([k,v,extra])=>`<div class="barra"><div class="barra-l"><span>${k}</span><b>${fmt(v)}${extra?` <small style="font-weight:400;color:var(--mut)">${extra}</small>`:''}</b></div><div class="barra-t"><i style="width:${(v/max*100).toFixed(1)}%"></i></div></div>`).join('');
+};
+const soma=(ds,f)=>Object.entries(ds.reduce((a,d)=>{const k=f(d);a[k]=(a[k]||0)+d.v;return a},{})).sort((a,b)=>b[1]-a[1]);
+const deputados=()=>get('/deputados?itens=1000').then(r=>r.json.dados);
+
+/* ===== Gastos de todos os deputados em um mês (513 consultas) ===== */
+const varreduras={};
+function gastosDoMes(ano,mes,onProg){
+  const chave=`gastos-${ano}-${mes}`;
+  if(varreduras[chave]) return varreduras[chave];
+  // Guarda no navegador por 6h só para não repetir 513 consultas a cada visita.
+  try{const c=JSON.parse(localStorage.getItem(chave)||'null');if(c&&Date.now()-c.t<6*3600e3) return varreduras[chave]=Promise.resolve(c.d)}catch{}
+  return varreduras[chave]=(async()=>{
+    // 1º: arquivo pronto, gerado todo dia pelo robô do GitHub Actions (abre na hora).
+    try{const r=await fetch(`dados/gastos-${ano}-${mes}.json`,{cache:'no-cache'});if(r.ok) return (await r.json()).notas}catch{}
+    // 2º: sem arquivo (ex.: meses antigos), consulta os deputados um a um.
+    const deps=await deputados();
+    const fila=[...deps],out=[];let feitos=0;
+    await Promise.all(Array.from({length:16},async()=>{
+      while(fila.length){
+        const dep=fila.shift();
+        try{
+          for(let pag=1;;pag++){
+            const r=await get(`/deputados/${dep.id}/despesas?idLegislatura=${dep.idLegislatura}&ano=${ano}&mes=${mes}&itens=100&pagina=${pag}`);
+            r.json.dados.forEach(d=>out.push({id:dep.id,nome:dep.nome,p:dep.siglaPartido,uf:dep.siglaUf,t:d.tipoDespesa,v:d.valorLiquido,dt:(d.dataDocumento||'').slice(0,10),f:d.nomeFornecedor,u:d.urlDocumento}));
+            if(!r.json.links.some(l=>l.rel==='next')) break;
+          }
+        }catch{}
+        feitos++;onProg&&onProg(feitos/deps.length);
+      }
+    }));
+    try{localStorage.setItem(chave,JSON.stringify({t:Date.now(),d:out}))}catch{}
+    return out;
+  })();
+}
+const barraProg=(el,txt)=>f=>{el.innerHTML=`<p class="meta">${txt} ${Math.round(f*100)}%</p><div class="barra-t"><i style="width:${f*100}%"></i></div>`};
+function porPartido(ds,deps){
+  const tam={};deps.forEach(d=>tam[d.siglaPartido]=(tam[d.siglaPartido]||0)+1);
+  return soma(ds,d=>d.p).map(([p,v])=>[p,v,tam[p]]);
+}
+
+/* ===== Votações nominais (as únicas que registram o voto de cada deputado) ===== */
+async function votacoesNominais(n=15){
+  const {json}=await get('/votacoes?idOrgao=180&itens=200&ordem=DESC&ordenarPor=dataHoraRegistro');
+  return json.dados.filter(v=>/Sim:\s*\d+/i.test(v.descricao)).slice(0,n);
+}
+const tipoVoto=t=>/^sim/i.test(t)?'sim':/^n[ãa]o/i.test(t)?'nao':/absten/i.test(t)?'abs':'outro';
+function placarDe(votos){
+  const c={sim:0,nao:0,abs:0,outro:0};votos.forEach(v=>c[tipoVoto(v.tipoVoto||'')]++);return c;
+}
+const placarHTML=c=>{const t=c.sim+c.nao+c.abs||1;
+  return `<div class="placar" role="img" aria-label="Sim ${c.sim}, Não ${c.nao}, Abstenção ${c.abs}"><i class="p-sim" style="width:${c.sim/t*100}%"></i><i class="p-nao" style="width:${c.nao/t*100}%"></i><i class="p-abs" style="width:${c.abs/t*100}%"></i></div>`};
+async function cartaoVotacao(v,{partidos=true,uf=''}={}){
+  const [det,vs]=await Promise.all([get('/votacoes/'+v.id).catch(()=>null),get(`/votacoes/${v.id}/votos`)]);
+  const votos=vs.json.dados;
+  const prop=det?.json.dados.proposicoesAfetadas?.[0];
+  const c=placarDe(votos);
+  const res=v.aprovacao===1?'<span class="selo sim">APROVADO</span>':v.aprovacao===0?'<span class="selo nao">REJEITADO</span>':'';
+  const grupos={};votos.forEach(x=>{const p=x.deputado_.siglaPartido;(grupos[p]??=[]).push(x)});
+  const partidosHTML=Object.entries(grupos).sort((a,b)=>b[1].length-a[1].length).map(([p,l])=>{const k=placarDe(l);
+    return `<div class="pt"><div class="pt-l"><b>${esc(p)}</b><span>${k.sim} sim · ${k.nao} não${k.abs?` · ${k.abs} abst.`:''}</span></div>${placarHTML(k)}</div>`}).join('');
+  const doEstado=uf?votos.filter(x=>x.deputado_.siglaUf===uf):[];
+  return `<article class="votacao">
+    <div class="meta">${data(v.data)} · Plenário da Câmara ${res}</div>
+    <h3>${prop?`${esc(nomeTipo(prop.siglaTipo))} ${esc(prop.numero)}/${esc(prop.ano)}: ${esc(corta(prop.ementa,220))}`:esc(corta(v.descricao,200))}</h3>
+    <p style="margin:0;font-size:.86em;color:var(--mut)">${esc(corta(v.descricao,260))}</p>
+    ${placarHTML(c)}
+    <div class="legenda"><span><b style="color:var(--ok)">${c.sim}</b> Sim</span><span><b style="color:var(--acc)">${c.nao}</b> Não</span><span><b style="color:var(--warn)">${c.abs}</b> Abstenção</span>${c.outro?`<span><b>${c.outro}</b> outros</span>`:''}</div>
+    ${partidos?`<details style="margin-top:10px"><summary class="tag" style="cursor:pointer">Como cada partido votou</summary><div class="partidos">${partidosHTML}</div></details>`:''}
+    ${uf?`<details open style="margin-top:8px"><summary class="tag" style="cursor:pointer">Deputados de ${uf} (${doEstado.length})</summary>${doEstado.length?doEstado.sort((a,b)=>a.deputado_.nome.localeCompare(b.deputado_.nome)).map(x=>`<div class="linha"><span class="selo ${tipoVoto(x.tipoVoto)==='abs'?'neutro':tipoVoto(x.tipoVoto)}">${esc((x.tipoVoto||'').toUpperCase())}</span><a class="link" href="#/deputado/${x.deputado_.id}">${esc(x.deputado_.nome)}</a> <small>(${esc(x.deputado_.siglaPartido)})</small></div>`).join(''):'<p class="vazio">Nenhum deputado deste estado registrou voto.</p>'}</details>`:''}
+    ${prop?`<a class="link tag" style="font-size:.8em" href="https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=${prop.id}" ${ext}>Ver o projeto na Câmara →</a>`:''}
+    ${fonte(vs.url)}
+  </article>`;
+}
+
+/* ===== Leis ===== */
+async function leisRecentes(n){
+  const {json,url}=await get(`/proposicoes?codSituacao=1140&siglaTipo=PL&siglaTipo=PLP&siglaTipo=PEC&siglaTipo=MPV&siglaTipo=PLV&dataInicio=${hoje.getFullYear()-1}-01-01&itens=${n}&ordem=DESC&ordenarPor=id`);
+  const temas=await Promise.all(json.dados.map(p=>get(`/proposicoes/${p.id}/temas`).then(r=>r.json.dados.map(t=>t.tema)).catch(()=>[])));
+  return {url,itens:json.dados.map((p,i)=>({...p,temas:temas[i]}))};
+}
+const leiHTML=p=>`<div class="lei">
+  <div class="meta">${esc(nomeTipo(p.siglaTipo))}</div>
+  <a class="nome link" href="https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=${p.id}" ${ext}>${sigla(p.siglaTipo,p.numero,p.ano)}</a>
+  <p>${esc(p.ementa)}</p>
+  <div>${p.temas.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div></div>`;
+
+/* ===== Notícias ===== */
+const TEMAS={
+  politica:['Política','dinamico/POLITICA'],economia:['Economia','dinamico/ECONOMIA'],saude:['Saúde','dinamico/SAUDE'],
+  educacao:['Educação','dinamico/EDUCACAO-E-CULTURA'],seguranca:['Segurança','dinamico/SEGURANCA'],
+  ambiente:['Meio Ambiente','dinamico/MEIO-AMBIENTE'],justica:['Justiça','dinamico/DIREITO-E-JUSTICA'],trabalho:['Trabalho','dinamico/TRABALHO-E-PREVIDENCIA']
+};
+const card=(n,tema)=>`<a class="card" href="${esc(n.link)}" ${ext}>${n.img?`<img src="${esc(n.img)}" alt="${esc(n.alt)}" loading="lazy">`:''}
+  ${tema?`<div class="tema">${esc(tema)}</div>`:''}<h3>${esc(n.titulo)}</h3><div class="meta">${esc(hora(n.data))}</div>${n.pars[0]?`<p>${esc(corta(n.pars[0],140))}</p>`:''}</a>`;
+const skel=n=>Array.from({length:n},()=>`<div><div class="sk" style="aspect-ratio:3/2"></div><div class="sk" style="height:14px;margin-top:8px"></div></div>`).join('');
+
+/* =================== PÁGINAS =================== */
+const PAGINAS={
+
+/* ---------- INÍCIO ---------- */
+async ''(){
+  const mp=new Date(hoje.getFullYear(),hoje.getMonth()-1,1),A=mp.getFullYear(),M=mp.getMonth()+1;
+  app.innerHTML=`
+  <section class="hero">
+    <h1>Quem representa você em Brasília?</h1>
+    <p>Veja quem é o deputado, quanto gastou, como votou e o que foi aprovado — direto da fonte oficial.</p>
+    <form id="hbusca"><input id="hnome" placeholder="Digite o nome de um deputado" aria-label="Nome do deputado"><button class="primario">Buscar</button></form>
+    <div class="meta" style="margin-bottom:6px">ou escolha seu estado</div>
+    <div class="ufs">${UFS.map(u=>`<a href="#/deputados/${u}">${u}</a>`).join('')}</div>
+  </section>
+
+  <section class="bloco">
+    <h2 class="kicker">A Câmara em números</h2>
+    <div class="kpis" id="knums">${['deputados em exercício',`gasto em ${MESES[M-1]} (cota parlamentar)`,'votações nominais no Plenário em 30 dias','partidos com deputados na Câmara'].map(t=>`<div><div class="cifra sk" style="height:32px"></div><small>${t}</small></div>`).join('')}</div>
+  </section>
+
+  <section class="bloco cols">
+    <div>
+      <h2 class="kicker">Última votação no Plenário <a href="#/votacoes">todas as votações →</a></h2>
+      <div id="hvoto"><p class="vazio">Buscando a votação mais recente…</p></div>
+    </div>
+    <div>
+      <h2 class="kicker">Gastos por partido <a href="#/gastos">detalhes →</a></h2>
+      <p class="sub" style="margin-bottom:10px">${MESES[M-1]} de ${A} · média por deputado · partidos em ordem de tamanho da bancada</p>
+      <div id="hpartidos"></div>
+      ${ajuda('O que é essa cota?','Cada deputado tem uma verba mensal (a “cota parlamentar”) para pagar despesas do mandato — passagens, combustível, escritório, divulgação. Ele paga e pede reembolso à Câmara, que publica cada nota.')}
+    </div>
+  </section>
+
+  <section class="bloco">
+    <h2 class="kicker">Leis aprovadas recentemente <a href="#/leis">ver todas →</a></h2>
+    ${ajuda('O que significa “virou lei”?','São propostas que passaram pela Câmara e pelo Senado e foram sancionadas (ou promulgadas). A partir daí passam a valer para todos.')}
+    <div class="grid2" id="hleis"><p class="vazio">Consultando…</p></div>
+  </section>
+
+  <section class="bloco">
+    <h2 class="kicker">Principais notícias por tema <a href="#/noticias">mais notícias →</a></h2>
+    <div class="ncards" id="hnot">${skel(6)}</div>
+  </section>`;
+
+  $('#hbusca').onsubmit=e=>{e.preventDefault();location.hash='#/deputados/busca/'+encodeURIComponent($('#hnome').value.trim())};
+  const k=(i,v)=>{const el=$('#knums').children[i];el.firstElementChild.outerHTML=`<div class="cifra">${v}</div>`};
+
+  deputados().then(ds=>{
+    k(0,ds.length);k(3,new Set(ds.map(d=>d.siglaPartido)).size);
+    gastosDoMes(A,M,barraProg($('#hpartidos'),'Somando as notas de todos os deputados…')).then(g=>{
+      k(1,brl0(g.reduce((a,d)=>a+d.v,0)));
+      $('#hpartidos').innerHTML=barras(porPartido(g,ds).sort((a,b)=>b[2]-a[2]||a[0].localeCompare(b[0])).map(([p,v,n])=>[p,v/n,`(${n} dep.)`]),brl0)+
+        `<p class="fonte">Soma das notas do mês ÷ nº de deputados do partido em exercício. O mês pode estar incompleto: notas são publicadas após o reembolso.</p>`;
+    });
+  }).catch(()=>k(0,'—'));
+
+  const ini=new Date(hoje);ini.setDate(ini.getDate()-30);
+  get(`/votacoes?idOrgao=180&dataInicio=${iso(ini)}&dataFim=${iso(hoje)}&itens=200`).then(r=>k(2,r.json.dados.filter(v=>/Sim:\s*\d+/i.test(v.descricao)).length)).catch(()=>k(2,'—'));
+
+  votacoesNominais(1).then(vs=>vs[0]?cartaoVotacao(vs[0]):'<p class="vazio">Nenhuma votação nominal recente.</p>').then(h=>$('#hvoto').innerHTML=h).catch(e=>$('#hvoto').innerHTML=erro(e));
+  leisRecentes(6).then(({itens,url})=>$('#hleis').innerHTML=itens.map(leiHTML).join('')+`<div>${fonte(url)}</div>`).catch(e=>$('#hleis').innerHTML=erro(e));
+
+  const escolhidos=['politica','economia','saude','educacao','seguranca','ambiente','justica','trabalho'];
+  Promise.all(escolhidos.map(t=>feed(TEMAS[t][1]).then(ns=>ns[0]?[t,ns[0]]:null).catch(()=>null))).then(rs=>{
+    const ok=rs.filter(Boolean).slice(0,6);
+    $('#hnot').innerHTML=ok.map(([t,n])=>card(n,TEMAS[t][0])).join('')||'<p class="vazio">Notícias indisponíveis.</p>';
+  });
+},
+
+/* ---------- DEPUTADOS ---------- */
+async deputados(arg=''){
+  const [a,b]=arg.split('/');const uf=UFS.includes(a)?a:'';const nomeIni=a==='busca'?decodeURIComponent(b||''):'';
+  app.innerHTML=`<h1 class="titulo-sec">Deputados${uf?' de '+uf:''}</h1><p class="sub">Clique em um deputado para ver quem é, quanto gastou e como votou.</p>
+    <form id="busca"><input id="nome" placeholder="Nome do deputado" aria-label="Nome" value="${esc(nomeIni)}">
+    <select id="uf" aria-label="Estado"><option value="">Todos os estados</option>${UFS.map(u=>`<option ${u===uf?'selected':''}>${u}</option>`).join('')}</select>
+    <button class="primario">Pesquisar</button></form><div id="res"></div>`;
+  const buscar=async()=>{
+    const q=new URLSearchParams({ordem:'ASC',ordenarPor:'nome',itens:'1000'});
+    if($('#nome').value.trim()) q.set('nome',$('#nome').value.trim());
+    if($('#uf').value) q.set('siglaUf',$('#uf').value);
+    $('#res').innerHTML='<p class="vazio">Consultando…</p>';
+    try{
+      const {json,url}=await get('/deputados?'+q);
+      $('#res').innerHTML=`<p class="meta">${json.dados.length} deputado(s)</p><div class="lista">${json.dados.map(d=>`
+        <a class="dep" href="#/deputado/${d.id}"><img src="${esc(d.urlFoto)}" alt="" loading="lazy"><b>${esc(d.nome)}</b><small>${esc(d.siglaPartido)} · ${esc(d.siglaUf)}</small></a>`).join('')}</div>${fonte(url)}`;
+    }catch(e){$('#res').innerHTML=erro(e)}
+  };
+  $('#busca').onsubmit=e=>{e.preventDefault();buscar()};
+  $('#uf').onchange=buscar;
+  buscar();
+},
+
+/* ---------- PERFIL ---------- */
+async deputado(id){
+  app.innerHTML='<p class="vazio">Carregando perfil…</p>';
+  try{
+    // /deputados/{id} não envia cabeçalho CORS; a listagem filtrada por id envia.
+    const {json,url}=await get('/deputados?id='+id);
+    const s=json.dados[0];if(!s) throw new Error('deputado não encontrado');
+    app.innerHTML=`<a class="voltar" href="#/deputados/${esc(s.siglaUf)}">← Deputados de ${esc(s.siglaUf)}</a>
+      <div class="perfil"><img src="${esc(s.urlFoto)}" alt="Foto oficial">
+        <div><div class="meta">Deputado federal</div>
+        <h1 class="titulo-sec">${esc(s.nome)}</h1>
+        <p style="margin:6px 0">Partido: <b>${esc(s.siglaPartido)}</b> · Estado: <b>${esc(s.siglaUf)}</b> · Em exercício</p>
+        <a class="btn" href="https://www.camara.leg.br/deputados/${id}" ${ext}>Página oficial na Câmara →</a>
+        ${fonte(url)}</div></div>
+
+      <section class="bloco" style="margin-top:22px">
+        <h2 class="kicker">Resumo do mandato</h2>
+        <div class="kpis" id="kpis">${['gastou nesta legislatura','mandatos na Câmara','propostas apresentadas','comissões em que atua'].map(t=>`<div><div class="cifra sk" style="height:32px"></div><small>${t}</small></div>`).join('')}</div>
+      </section>
+
+      <section class="bloco">
+        <h2 class="kicker">Quanto gastou</h2>
+        ${ajuda('De onde vem esse dinheiro?','É a cota parlamentar: verba pública mensal para despesas do mandato. O deputado paga e pede reembolso; a Câmara publica cada nota fiscal. Os valores abaixo são os reembolsados.')}
+        <div class="grid2">
+          <div><h3 class="rx-t">Por ano</h3><div id="rx-ano"><p class="vazio">Somando todas as notas…</p></div></div>
+          <div><h3 class="rx-t">Com o quê</h3><div id="rx-cat"></div></div>
+          <div><h3 class="rx-t">Para quem (maiores fornecedores)</h3><div id="rx-forn"></div></div>
+          <div><h3 class="rx-t">Mandatos</h3><div id="rx-mand"><p class="vazio">Consultando…</p></div></div>
+        </div>
+      </section>
+
+      <section class="bloco">
+        <h2 class="kicker">Como votou</h2>
+        ${ajuda('Por que só algumas votações?','Só as votações “nominais” (no painel eletrônico) registram o voto de cada deputado. Nas votações simbólicas, a Câmara não registra votos individuais.')}
+        <div id="rx-votos"><p class="vazio">Buscando votações nominais…</p></div>
+      </section>
+
+      <section class="bloco">
+        <h2 class="kicker">Registros completos</h2>
+        <div class="tabs" role="tablist">${[['despesas','Notas fiscais'],['proposicoes','Propostas'],['orgaos','Comissões'],['historico','Histórico']]
+          .map(([k,t],i)=>`<button role="tab" data-t="${k}" aria-selected="${i==0}">${t}</button>`).join('')}</div><div id="aba"></div>
+      </section>`;
+    const tabs=document.querySelectorAll('[role=tab]');
+    tabs.forEach(b=>b.onclick=()=>{tabs.forEach(x=>x.setAttribute('aria-selected',x==b));ABAS[b.dataset.t](id,s.idLegislatura)});
+    ABAS.despesas(id,s.idLegislatura);
+    resumo(id,s.idLegislatura);
+  }catch(e){app.innerHTML=erro(e)}
+},
+
+/* ---------- GASTOS ---------- */
+async gastos(){
+  const opts=[];
+  for(let i=0;i<12;i++){const d=new Date(hoje.getFullYear(),hoje.getMonth()-i,1);opts.push([`${d.getFullYear()}-${d.getMonth()+1}`,`${MESES[d.getMonth()]} de ${d.getFullYear()}`+(i===0?' (em andamento)':'')])}
+  app.innerHTML=`<h1 class="titulo-sec">Gastos dos Deputados</h1>
+    <p class="sub">Quanto os deputados gastaram da cota parlamentar — por partido, por estado ou por deputado.</p>
+    <div class="alerta">A Câmara publica cada nota só depois do reembolso, o que pode levar semanas. <b>O mês atual sempre aparece incompleto.</b></div>
+    <form id="per"><select id="periodo" aria-label="Mês">${opts.map(([v,t],i)=>`<option value="${v}" ${i==1?'selected':''}>${t}</option>`).join('')}</select>
+    <select id="gcat" aria-label="Categoria"><option value="">Todas as categorias</option></select></form>
+    <div id="gprog" class="prog"></div><div id="gres"></div>`;
+  let base=[],deps=[],vis='partido';
+  const render=()=>{
+    const cat=$('#gcat').value;
+    const ds=cat?base.filter(d=>d.t===cat):base;
+    const total=ds.reduce((a,d)=>a+d.v,0);
+    const comGasto=new Set(ds.map(d=>d.id)).size;
+    let tabelaDados,cols;
+    if(vis==='partido'){
+      const tam={};deps.forEach(d=>tam[d.siglaPartido]=(tam[d.siglaPartido]||0)+1);
+      tabelaDados=soma(ds,d=>d.p).map(([k,v])=>({k,n:tam[k]||0,v,m:v/(tam[k]||1)}));
+      cols=[['k','Partido'],['n','Deputados','num'],['v','Total','num'],['m','Média por deputado','num']];
+    }else if(vis==='estado'){
+      const tam={};deps.forEach(d=>tam[d.siglaUf]=(tam[d.siglaUf]||0)+1);
+      tabelaDados=soma(ds,d=>d.uf).map(([k,v])=>({k,n:tam[k]||0,v,m:v/(tam[k]||1)}));
+      cols=[['k','Estado'],['n','Deputados','num'],['v','Total','num'],['m','Média por deputado','num']];
+    }else{
+      const g={};ds.forEach(d=>{(g[d.id]??={id:d.id,k:d.nome,p:d.p,uf:d.uf,n:0,v:0});g[d.id].n++;g[d.id].v+=d.v});
+      tabelaDados=Object.values(g);
+      cols=[['k','Deputado'],['p','Partido'],['uf','UF'],['n','Notas','num'],['v','Total','num']];
+    }
+    let ord={k:'k',d:1};
+    const recentes=[...ds].sort((a,b)=>b.dt.localeCompare(a.dt)).slice(0,10);
+    $('#gres').innerHTML=`
+      <div class="kpis"><div><div class="cifra">${brl0(total)}</div><small>total gasto${cat?' com '+esc(titulo(cat).toLowerCase()):''}</small></div>
+        <div><div class="cifra">${num(ds.length)}</div><small>notas fiscais</small></div>
+        <div><div class="cifra">${comGasto}</div><small>de ${deps.length} deputados com notas publicadas</small></div>
+        <div><div class="cifra">${comGasto?brl0(total/comGasto):'—'}</div><small>média por deputado com notas</small></div></div>
+      <div class="grid2 bloco" style="margin-top:26px">
+        <div><h3 class="rx-t">Com o quê</h3>${barras(soma(ds,d=>titulo(d.t)).slice(0,10))}</div>
+        <div><h3 class="rx-t">Notas mais recentes</h3>${recentes.map(d=>`<div class="linha"><span class="selo">${data(d.dt)}</span><div><a class="link" href="#/deputado/${d.id}"><b>${esc(d.nome)}</b></a> (${esc(d.p)}-${esc(d.uf)}) · <b>${brl(d.v)}</b><br><small>${esc(titulo(d.t))} — ${esc(d.f)}</small></div></div>`).join('')||'<p class="vazio">Nenhuma nota.</p>'}</div>
+      </div>
+      <section class="bloco">
+        <div class="vis" role="group" aria-label="Ver por">${[['partido','Por partido'],['estado','Por estado'],['deputado','Por deputado']].map(([k,t])=>`<button data-v="${k}" aria-pressed="${vis===k}">${t}</button>`).join('')}</div>
+        ${vis==='deputado'?'<input id="gfiltro" placeholder="Filtrar por nome, partido ou UF" style="width:100%;margin-bottom:8px">':''}
+        ${vis!=='deputado'?ajuda('Por que “média por deputado”?','Partidos e estados têm tamanhos muito diferentes. Dividir o total pelo número de deputados em exercício permite comparar de forma justa.'):''}
+        <div class="tab-wrap"><table id="gtab"><thead><tr>${cols.map(([k,t,c])=>`<th data-k="${k}" class="${c||''}">${t} ↕</th>`).join('')}</tr></thead><tbody></tbody></table></div>
+        <p class="fonte">Fonte: Câmara dos Deputados — Dados Abertos (/deputados/{id}/despesas) · ${agora()} · valores reembolsados. Ordem alfabética; clique no título da coluna para reordenar.</p>
+      </section>`;
+    const linhas=()=>{
+      const f=($('#gfiltro')?.value||'').toLowerCase();
+      const rows=tabelaDados.filter(x=>!f||`${x.k} ${x.p||''} ${x.uf||''}`.toLowerCase().includes(f))
+        .sort((a,b)=>{const A=a[ord.k],B=b[ord.k];return (typeof A==='number'?A-B:String(A).localeCompare(B,'pt-BR'))*ord.d});
+      $('#gtab tbody').innerHTML=rows.map(x=>`<tr>${cols.map(([k,,c])=>{
+        let v=x[k];if(k==='v'||k==='m') v=brl(v);
+        if(k==='k'&&vis==='deputado') v=`<a class="link" href="#/deputado/${x.id}"><b>${esc(x.k)}</b></a>`;
+        else if(k==='k') v=`<b>${esc(v)}</b>`; else v=esc(v);
+        return `<td class="${c||''}">${v}</td>`}).join('')}</tr>`).join('')||`<tr><td colspan="${cols.length}" class="vazio">Nada encontrado.</td></tr>`;
+    };
+    document.querySelectorAll('#gtab th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;ord={k,d:ord.k===k?-ord.d:(['n','v','m'].includes(k)?-1:1)};linhas()});
+    document.querySelectorAll('.vis button').forEach(b=>b.onclick=()=>{vis=b.dataset.v;render()});
+    $('#gfiltro')&&($('#gfiltro').oninput=linhas);
+    linhas();
+  };
+  const consultar=async()=>{
+    const [a,m]=$('#periodo').value.split('-').map(Number);
+    $('#gres').innerHTML='';
+    deps=await deputados();
+    base=await gastosDoMes(a,m,barraProg($('#gprog'),`Somando as notas dos ${deps.length} deputados (cerca de 1 minuto na primeira vez)…`));
+    $('#gprog').innerHTML='';
+    const cats=[...new Set(base.map(d=>d.t))].sort();
+    $('#gcat').innerHTML='<option value="">Todas as categorias</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(titulo(c))}</option>`).join('');
+    render();
+  };
+  $('#periodo').onchange=consultar;
+  $('#gcat').onchange=()=>base.length&&render();
+  consultar();
+},
+
+/* ---------- VOTAÇÕES ---------- */
+async votacoes(arg=''){
+  const uf=UFS.includes(arg)?arg:'';
+  app.innerHTML=`<h1 class="titulo-sec">Votações</h1><p class="sub">O que o Plenário da Câmara votou, o resultado e como cada partido votou.</p>
+    ${ajuda('Por que só algumas votações aparecem?','Aqui estão as votações “nominais”, feitas no painel eletrônico — as únicas em que a Câmara registra o voto de cada deputado.')}
+    <form><select id="vuf" aria-label="Estado"><option value="">Ver como votaram os deputados do meu estado…</option>${UFS.map(u=>`<option ${u===uf?'selected':''}>${u}</option>`).join('')}</select></form>
+    <div id="vlista"><p class="vazio">Buscando votações…</p></div>`;
+  $('#vuf').onchange=()=>location.hash='#/votacoes/'+$('#vuf').value;
+  try{
+    const vs=await votacoesNominais(10);
+    if(!vs.length){$('#vlista').innerHTML='<p class="vazio">Nenhuma votação nominal recente.</p>';return}
+    $('#vlista').innerHTML='';
+    for(const v of vs){
+      const el=document.createElement('div');el.innerHTML='<p class="vazio">Carregando…</p>';$('#vlista').append(el);
+      cartaoVotacao(v,{uf}).then(h=>el.innerHTML=h).catch(e=>el.innerHTML=erro(e));
+    }
+  }catch(e){$('#vlista').innerHTML=erro(e)}
+},
+
+/* ---------- LEIS ---------- */
+async leis(){
+  app.innerHTML=`<h1 class="titulo-sec">Leis Aprovadas</h1>
+    <p class="sub">Propostas que passaram pelo Congresso e viraram lei (situação oficial: “Transformado em Norma Jurídica”).</p>
+    ${ajuda('Como ler isso?',Object.entries(SIGLAS).slice(0,5).map(([k,v])=>`<b>${k}</b> = ${v}`).join(' · ')+'. O texto abaixo de cada uma é a “ementa”: o resumo oficial do que a lei faz. As etiquetas mostram o tema.')}
+    <div id="leis" style="max-width:860px"><p class="vazio">Consultando…</p></div>`;
+  try{const {itens,url}=await leisRecentes(30);$('#leis').innerHTML=itens.map(leiHTML).join('')+fonte(url)}catch(e){$('#leis').innerHTML=erro(e)}
+},
+
+/* ---------- NOTÍCIAS ---------- */
+async noticias(tema=''){
+  const t=TEMAS[tema]?tema:'';
+  app.innerHTML=`<h1 class="titulo-sec">Notícias</h1><p class="sub">Da Agência Câmara de Notícias, separadas por tema.</p>
+    <nav class="subtabs"><a href="#/noticias" ${!t?'aria-current="page"':''}>Destaques</a>${Object.entries(TEMAS).map(([k,[n]])=>`<a href="#/noticias/${k}" ${k===t?'aria-current="page"':''}>${n}</a>`).join('')}</nav>
+    <div class="ncards" id="nlista">${skel(6)}</div><div id="nfonte"></div>`;
+  try{
+    const f=t?TEMAS[t][1]:'ultimas-noticias';
+    const ns=await feed(f);
+    $('#nlista').innerHTML=ns.length?ns.slice(0,12).map(n=>card(n)).join(''):'<p class="vazio">Sem notícias recentes neste tema.</p>';
+    $('#nfonte').innerHTML=fonte(RSS+f,'Agência Câmara de Notícias');
+  }catch(e){$('#nlista').innerHTML=erro(e)}
+}
+};
+
+/* ===== Resumo do deputado ===== */
+const kpi=(i,valor,sub)=>{const el=$('#kpis')?.children[i];if(el) el.innerHTML=`<div class="cifra">${valor}</div><small>${sub}</small>`};
+async function resumo(id,leg){
+  (async()=>{
+    try{
+      const base=`/deputados/${id}/despesas?idLegislatura=${leg}&itens=100`;
+      const p1=await get(base+'&pagina=1');
+      const ult=Number((p1.json.links.find(l=>l.rel==='last')?.href.match(/pagina=(\d+)/)||[,1])[1]);
+      const resto=await Promise.all(Array.from({length:ult-1},(_,i)=>get(`${base}&pagina=${i+2}`)));
+      const ds=[p1,...resto].flatMap(r=>r.json.dados).map(d=>({...d,v:d.valorLiquido}));
+      kpi(0,brl0(ds.reduce((a,d)=>a+d.v,0)),`gastou da cota parlamentar desde ${ds.length?Math.min(...ds.map(d=>d.ano)):'—'} · ${num(ds.length)} notas`);
+      $('#rx-ano').innerHTML=barras(soma(ds,d=>d.ano).sort((a,b)=>a[0]-b[0]))+fonte(API+base);
+      $('#rx-cat').innerHTML=barras(soma(ds,d=>titulo(d.tipoDespesa)).slice(0,8));
+      $('#rx-forn').innerHTML=barras(soma(ds,d=>d.nomeFornecedor).slice(0,6));
+    }catch(e){kpi(0,'—','gasto indisponível');$('#rx-ano').innerHTML=erro(e)}
+  })();
+
+  Promise.allSettled([get(`/deputados/${id}/historico`),get(`/deputados/${id}/mandatosExternos`)]).then(([h,m])=>{
+    const legs=h.value?[...new Set(h.value.json.dados.map(x=>x.idLegislatura))].sort((a,b)=>a-b):[];
+    const ex=m.value?.json.dados||[];
+    kpi(1,legs.length||'—',legs.length>1?'mandatos (legislaturas) na Câmara':'mandato na Câmara');
+    $('#rx-mand').innerHTML=`<p style="margin:0 0 8px"><b>Na Câmara:</b> ${legs.length?legs.map(l=>`${l}ª legislatura (${1795+4*l}–${1799+4*l})`).join(', '):'—'}</p>`+
+      (ex.length?`<p style="margin:0 0 4px"><b>Outros cargos eletivos:</b></p>`+ex.map(x=>`<div class="linha" style="padding:5px 0">${esc(x.cargo)} — ${esc(x.municipio?x.municipio+'/':'')}${esc(x.siglaUf)} (${esc(x.anoInicio)}–${esc(x.anoFim)}) · ${esc(x.siglaPartidoEleicao)}</div>`).join('')
+        :'<p class="vazio">Nenhum outro cargo eletivo declarado à Câmara.</p>');
+  });
+
+  get(`/proposicoes?idDeputadoAutor=${id}&itens=1`).then(r=>kpi(2,num(r.total),'propostas de autoria ou coautoria (projetos, requerimentos etc.)')).catch(()=>kpi(2,'—','indisponível'));
+  get(`/deputados/${id}/orgaos?itens=100`).then(r=>kpi(3,r.json.dados.filter(o=>!o.dataFim).length,'comissões e órgãos em que atua hoje')).catch(()=>kpi(3,'—','indisponível'));
+
+  try{
+    const vs=await votacoesNominais(12);
+    const res=await Promise.all(vs.map(v=>Promise.all([get(`/votacoes/${v.id}/votos`),get('/votacoes/'+v.id).catch(()=>null)]).then(([r,d])=>({v,votos:r.json.dados,prop:d?.json.dados.proposicoesAfetadas?.[0]})).catch(()=>({v,votos:null}))));
+    const cont={};
+    const linhas=res.map(({v,votos,prop})=>{
+      const meu=votos?.find(x=>x.deputado_?.id==id);
+      const voto=votos===null?'Indisponível':(meu?.tipoVoto||'Sem registro de voto');
+      cont[voto]=(cont[voto]||0)+1;
+      const t=tipoVoto(voto);
+      return `<tr><td>${data(v.data)}</td><td>${prop?`<b>${esc(nomeTipo(prop.siglaTipo))} ${esc(prop.numero)}/${esc(prop.ano)}</b>: ${esc(corta(prop.ementa,160))}`:esc(corta(v.descricao,160))}<br><small style="color:var(--mut)">${v.aprovacao===1?'Resultado: aprovado':v.aprovacao===0?'Resultado: rejeitado':''}</small></td>
+        <td><span class="selo ${t==='abs'?'neutro':t}">${esc(voto.toUpperCase())}</span></td></tr>`;
+    });
+    $('#rx-votos').innerHTML=`<p style="margin:0 0 8px">Nas <b>${res.length}</b> votações nominais mais recentes: ${Object.entries(cont).map(([k,n])=>`<b>${n}</b> ${esc(k.toLowerCase())}`).join(' · ')}</p>`+
+      tabela(['Data','O que foi votado','Voto'],linhas)+
+      '<p class="fonte">“Sem registro de voto”: o nome não consta na lista oficial daquela votação (ausência, licença ou outro motivo — a fonte não detalha).</p>';
+  }catch(e){$('#rx-votos').innerHTML=erro(e)}
+}
+
+const tabela=(cab,linhas)=>linhas.length
+  ?`<div class="tab-wrap"><table><thead><tr>${cab.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${linhas.join('')}</tbody></table></div>`
+  :'<p class="vazio">A fonte não retornou registros.</p>';
+async function aba(path,render){
+  $('#aba').innerHTML='<p class="vazio">Consultando…</p>';
+  try{const {json,url}=await get(path);$('#aba').innerHTML=render(json.dados)+fonte(url)}
+  catch(e){$('#aba').innerHTML=erro(e)}
+}
+const ABAS={
+  despesas:(id,leg)=>aba(`/deputados/${id}/despesas?idLegislatura=${leg}&itens=100&ordem=DESC&ordenarPor=dataDocumento`,ds=>
+    `<p class="sub">As 100 notas mais recentes. Clique em “ver” para abrir a nota fiscal original.</p>`+
+    tabela(['Data','Categoria','Fornecedor','Valor','Nota'],ds.map(d=>`<tr><td>${data(d.dataDocumento)}</td><td>${esc(titulo(d.tipoDespesa))}</td>
+      <td>${esc(d.nomeFornecedor)}</td><td class="num">${brl(d.valorLiquido)}</td>
+      <td>${d.urlDocumento?`<a class="link tag" href="${esc(d.urlDocumento)}" ${ext}>ver</a>`:'—'}</td></tr>`))),
+  proposicoes:id=>aba(`/proposicoes?idDeputadoAutor=${id}&itens=100&ordem=DESC&ordenarPor=id`,ds=>
+    tabela(['Proposta','Data','Do que trata'],ds.map(p=>`<tr><td><a class="link tag" href="https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=${p.id}" ${ext}>${sigla(p.siglaTipo,p.numero,p.ano)}</a><br><small>${esc(nomeTipo(p.siglaTipo))}</small></td>
+      <td>${data(p.dataApresentacao)}</td><td>${esc(p.ementa)}</td></tr>`))),
+  orgaos:id=>aba(`/deputados/${id}/orgaos?itens=100&ordem=DESC&ordenarPor=dataInicio`,ds=>
+    tabela(['Comissão / órgão','Cargo','Início','Fim'],ds.map(o=>`<tr><td>${esc(o.nomeOrgao)}</td>
+      <td>${esc(o.titulo)}</td><td>${data(o.dataInicio)}</td><td>${o.dataFim?data(o.dataFim):'atual'}</td></tr>`))),
+  historico:id=>aba(`/deputados/${id}/historico`,ds=>
+    tabela(['Data','Partido','UF','Situação','Descrição'],ds.slice().reverse().map(h=>`<tr>
+      <td>${data(h.dataHora)}</td><td>${esc(h.siglaPartido)}</td><td>${esc(h.siglaUf)}</td><td>${esc(h.situacao||'')}</td><td>${esc(h.descricaoStatus||'')}</td></tr>`)))
+};
+
+/* ===== Roteador ===== */
+function rota(){
+  const m=location.hash.match(/^#\/([^/]*)\/?(.*)$/)||[];
+  const pag=m[1]||'',arg=m[2]||'';
+  const ativo=pag==='deputado'?'deputados':pag;
+  document.querySelectorAll('#menu a').forEach(a=>{
+    if(a.dataset.r===ativo){a.setAttribute('aria-current','page');a.scrollIntoView({block:'nearest',inline:'center'})}
+    else a.removeAttribute('aria-current');
+  });
+  window.scrollTo({top:0});
+  (PAGINAS[pag]||PAGINAS[''])(arg);
+}
+addEventListener('hashchange',rota);rota();
+</script>
+</body>
+</html>
