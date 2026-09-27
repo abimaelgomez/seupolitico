@@ -25,6 +25,8 @@ jobs:
         with:
           node-version: 22
       - name: Gerar arquivos de gastos
+        # Se a Câmara/Senado estiverem fora do ar, publica mesmo assim com os dados do dia anterior.
+        continue-on-error: true
         run: node scripts/gastos.mjs
       - name: Salvar dados no repositório
         run: |
